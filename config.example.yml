@@ -1,0 +1,100 @@
+# 服务器配置
+server:
+  port: 8080
+  host: "0.0.0.0"
+  read_timeout: 30
+  write_timeout: 30
+
+# 数据库配置
+database:
+  dsn: "user:password@tcp(localhost:3306)/landc_user_manager?charset=utf8mb4&parseTime=True&loc=Local"
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600
+
+# Redis配置
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+  pool_size: 10
+  min_idle_conns: 5
+  max_retries: 3
+  dial_timeout: 5
+  read_timeout: 3
+  write_timeout: 3
+
+# JWT配置
+jwt:
+  secret_key: "your-secret-key-here"
+  private_key_path: ""
+  public_key_path: ""
+  expires_in: 7200
+  refresh_in: 2592000
+
+# 邮件配置
+email:
+  host: "smtp.example.com"
+  port: 587
+  username: "your-email@example.com"
+  password: "your-password"
+  from: "your-email@example.com"
+
+# 短信配置
+sms:
+  api_key: "your-api-key"
+  api_secret: "your-api-secret"
+  sign_name: "您的签名"
+  template: "SMS_123456789"
+
+# 日志配置
+log:
+  provider: "file"
+  level: "info"
+  format: "json"
+  outputPath: "./logs"
+
+# 第三方登录配置
+third_party:
+  wechat:
+    app_id: "your-wechat-app-id"
+    app_secret: "your-wechat-app-secret"
+    redirect_uri: "http://your-domain.com/callback/wechat"
+  dingtalk:
+    app_id: "your-dingtalk-app-id"
+    app_secret: "your-dingtalk-app-secret"
+    redirect_uri: "http://your-domain.com/callback/dingtalk"
+  github:
+    client_id: "your-github-client-id"
+    client_secret: "your-github-client-secret"
+    redirect_uri: "http://your-domain.com/callback/github"
+  alipay:
+    app_id: "your-alipay-app-id"
+    app_secret: "your-alipay-app-secret"
+    redirect_uri: "http://your-domain.com/callback/alipay"
+
+# 缓存配置
+cache:
+  user_cache_expire: 3600
+
+# 密码配置
+password:
+  bcrypt_cost: 10
+
+# 验证码配置
+verify_code:
+  length: 6
+  expire_time: 300
+
+# HTTP客户端配置
+http_client:
+  timeout: 10
+
+# 登录历史配置
+login_history:
+  retention_days: 90
+
+# 限流配置
+rate_limit:
+  verify_code_interval: 60
+  max_verify_code_per_day: 10
