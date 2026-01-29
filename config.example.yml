@@ -48,30 +48,11 @@ sms:
   template: "SMS_123456789"
 
 # 日志配置
-log:
+logger:
   provider: "file"
   level: "info"
   format: "json"
   outputPath: "./logs"
-
-# 第三方登录配置
-third_party:
-  wechat:
-    app_id: "your-wechat-app-id"
-    app_secret: "your-wechat-app-secret"
-    redirect_uri: "http://your-domain.com/callback/wechat"
-  dingtalk:
-    app_id: "your-dingtalk-app-id"
-    app_secret: "your-dingtalk-app-secret"
-    redirect_uri: "http://your-domain.com/callback/dingtalk"
-  github:
-    client_id: "your-github-client-id"
-    client_secret: "your-github-client-secret"
-    redirect_uri: "http://your-domain.com/callback/github"
-  alipay:
-    app_id: "your-alipay-app-id"
-    app_secret: "your-alipay-app-secret"
-    redirect_uri: "http://your-domain.com/callback/alipay"
 
 # 缓存配置
 cache:
@@ -98,3 +79,18 @@ login_history:
 rate_limit:
   verify_code_interval: 60
   max_verify_code_per_day: 10
+
+# 第三方登录配置
+third_party:
+  wechat:
+    app_id: "your-wechat-app-id"
+    app_secret: "your-wechat-app-secret"
+  github:
+    client_id: "your-github-client-id"
+    client_secret: "your-github-client-secret"
+  dingtalk:
+    app_id: "your-dingtalk-app-id"
+    app_secret: "your-dingtalk-app-secret"
+  alipay:
+    app_id: "your-alipay-app-id"
+    app_secret: "your-alipay-app-secret"

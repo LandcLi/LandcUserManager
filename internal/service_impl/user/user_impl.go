@@ -78,7 +78,7 @@ func (s *userServiceImpl) Login(ctx context.Context, req *v1.LoginRequest) (*v1.
 	}
 
 	// 检测信任设备
-	isNewDevice := s.detectTrustedDevice(user.ID, req.DeviceFingerprint, req.UserAgent)
+	isNewDevice := s.detectTrustedDevice(user.ID, req.DeviceFingerprint)
 
 	// 检测异地登录
 	isDifferentLocation := s.detectDifferentLocation(user.ID, req.IP)
@@ -225,7 +225,7 @@ func (s *userServiceImpl) createUser(verifyType string, identifier string, passw
 		err  error
 	)
 	if password == "" {
-		// TODO 密码使用算法生成随机密码
+		password = generate.MustGenerateStrongPassword(16)
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -305,7 +305,7 @@ func (s *userServiceImpl) markTrustedDevice(userID uint, deviceName, deviceFinge
 }
 
 // detectTrustedDevice 检测设备是否已信任
-func (s *userServiceImpl) detectTrustedDevice(userID uint, deviceFingerprint string, userAgent string) bool {
+func (s *userServiceImpl) detectTrustedDevice(userID uint, deviceFingerprint string) bool {
 	if s.trustedDeviceDao == nil || deviceFingerprint == "" {
 		return false
 	}
@@ -319,7 +319,7 @@ func (s *userServiceImpl) detectTrustedDevice(userID uint, deviceFingerprint str
 	return true
 }
 
-// SendVerifyCode 发送验证码
+// SendVerifyCode 发送验证码 todo 完善发送验证码逻辑
 func (s *userServiceImpl) SendVerifyCode(req *model.SendVerifyCodeRequest) error {
 	ctx := context.Background()
 
@@ -421,7 +421,7 @@ func (s *userServiceImpl) checkVerifyCode(user *model.User, verifyCode string, v
 	return nil
 }
 
-// GetUserInfo 获取用户信息
+// GetUserInfo 获取用户信息 todo 完善用户信息返回逻辑
 func (s *userServiceImpl) GetUserInfo(userID uint) (*model.UserResponse, error) {
 	// 查找用户
 	user, err := s.userDao.FindByID(userID)
@@ -433,7 +433,7 @@ func (s *userServiceImpl) GetUserInfo(userID uint) (*model.UserResponse, error) 
 	return user.ToResponse(), nil
 }
 
-// UpdateUserInfo 更新用户信息
+// UpdateUserInfo 更新用户信息 todo 完善更新用户信息逻辑
 func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone string, avatar string) (*model.UserResponse, error) {
 	// 查找用户
 	user, err := s.userDao.FindByID(userID)
@@ -462,7 +462,7 @@ func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone str
 	return user.ToResponse(), nil
 }
 
-// ChangePassword 修改密码
+// ChangePassword 修改密码 todo 完善修改密码逻辑
 func (s *userServiceImpl) ChangePassword(userID uint, oldPassword string, newPassword string) error {
 	// 查找用户
 	user, err := s.userDao.FindByID(userID)
@@ -495,46 +495,89 @@ func (s *userServiceImpl) ChangePassword(userID uint, oldPassword string, newPas
 }
 
 // Register 用户注册
-func (s *userServiceImpl) Register(req *model.UserRegisterRequest) (*model.UserResponse, error) {
-	// 检查用户名是否已存在
-	existingUser, err := s.userDao.FindByUsername(req.Username)
+func (s *userServiceImpl) Register(ctx context.Context, req *v1.RegisterRequest) (res *v1.RegisterResponse, err error) {
+	if req.AuthType == "VERIFY_CODE" {
+		// 验证验证码
+		err = s.checkRegisterVerifyCode(req.Identifier, req.VerifyType, req.AuthCode)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// 检查用户是否已存在
+	var existingUser *model.User
+	switch req.VerifyType {
+	case "USERNAME":
+		existingUser, err = s.userDao.FindByUsername(req.Identifier)
+	case "EMAIL":
+		existingUser, err = s.userDao.FindByEmail(req.Identifier)
+	case "PHONE":
+		existingUser, err = s.userDao.FindByPhone(req.Identifier)
+	default:
+		return nil, errors.New("无效的验证类型")
+	}
 	if err == nil && existingUser != nil {
-		return nil, errors.New("用户名已存在")
+		return nil, errors.New("用户已存在")
 	}
 
-	// 检查邮箱是否已存在
-	existingUser, err = s.userDao.FindByEmail(req.Email)
-	if err == nil && existingUser != nil {
-		return nil, errors.New("邮箱已存在")
-	}
-
-	// 加密密码
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	// 创建用户
+	user, err := s.createUser(req.VerifyType, req.Identifier, req.Password, req.DeviceFingerprint, req.UserAgent, req.IP)
 	if err != nil {
-		return nil, errors.New("密码加密失败")
+		return nil, err
 	}
 
-	// 创建新用户
-	user := &model.User{
-		Username: req.Username,
-		Email:    req.Email,
-		Password: string(hashedPassword),
-		Nickname: req.Nickname,
-		Phone:    req.Phone,
-		Status:   1, // 默认激活
-	}
+	// 标记信任设备
+	s.markTrustedDevice(user.ID, "", req.DeviceFingerprint, req.IP, "")
 
-	// 保存用户
-	user, err = s.userDao.Create(user)
-	if err != nil {
-		return nil, errors.New("创建用户失败")
-	}
-
-	// 转换为响应对象
-	return user.ToResponse(), nil
+	// 返回注册结果
+	return &v1.RegisterResponse{
+		UserID: user.ID,
+	}, nil
 }
 
-// ResetPassword 重置密码
+// checkRegisterVerifyCode 验证注册验证码
+func (s *userServiceImpl) checkRegisterVerifyCode(identifier string, verifyType string, verifyCode string) error {
+	ctx := context.Background()
+
+	// 构建Redis键
+	var key string
+	switch verifyType {
+	case "EMAIL":
+		key = fmt.Sprintf("verify_code:email:%s:register", identifier)
+	case "PHONE":
+		key = fmt.Sprintf("verify_code:phone:%s:register", identifier)
+	default:
+		return errors.New("无效的验证类型")
+	}
+
+	// 从Redis获取验证码
+	redisClient := db.GetRedis()
+	if redisClient == nil {
+		logger.Errorf(ctx, "Redis客户端未初始化")
+		return errors.New("验证码验证失败")
+	}
+
+	storedCode, err := redisClient.Get(ctx, key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return errors.New("验证码已过期或不存在")
+		}
+		logger.Errorf(ctx, "从Redis获取验证码失败: %v", err)
+		return errors.New("验证码验证失败")
+	}
+
+	// 验证验证码
+	if storedCode != verifyCode {
+		return errors.New("验证码错误")
+	}
+
+	// 验证码验证成功后删除
+	_ = redisClient.Del(ctx, key).Err()
+
+	return nil
+}
+
+// ResetPassword 重置密码 todo 完善重置密码逻辑
 func (s *userServiceImpl) ResetPassword(email string, verifyCode string, newPassword string) error {
 	ctx := context.Background()
 
@@ -589,7 +632,7 @@ func (s *userServiceImpl) ResetPassword(email string, verifyCode string, newPass
 	return nil
 }
 
-// SendResetPasswordCode 发送重置密码验证码
+// SendResetPasswordCode 发送重置密码验证码 todo 完善发送重置密码验证码逻辑
 func (s *userServiceImpl) SendResetPasswordCode(email string) error {
 	ctx := context.Background()
 

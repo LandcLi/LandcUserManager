@@ -26,3 +26,7 @@ func NewUserController() *userController {
 func (uc *userController) Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error) {
 	return uc.UserService.Login(ctx, req)
 }
+
+func (uc *userController) Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error) {
+	return uc.UserService.Register(ctx, req)
+}

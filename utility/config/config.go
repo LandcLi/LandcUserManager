@@ -5,25 +5,28 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/LandcLi/LandcGoTools/mail"
+	"github.com/LandcLi/LandcLogFace"
+	"github.com/LandcLi/LandcUserManager/service"
+	"github.com/LandcLi/LandcUserManager/utility/client"
 	"gopkg.in/yaml.v2"
 )
 
 // Config 配置结构
 type Config struct {
-	Server       ServerConfig       `yaml:"server"`
-	Database     DatabaseConfig     `yaml:"database"`
-	Redis        RedisConfig        `yaml:"redis"`
-	JWT          JWTConfig          `yaml:"jwt"`
-	Email        EmailConfig        `yaml:"email"`
-	SMS          SMSConfig          `yaml:"sms"`
-	Log          LogConfig          `yaml:"log"`
-	Cache        CacheConfig        `yaml:"cache"`
-	Password     PasswordConfig     `yaml:"password"`
-	VerifyCode   VerifyCodeConfig   `yaml:"verify_code"`
-	HTTPClient   HTTPClientConfig   `yaml:"http_client"`
-	LoginHistory LoginHistoryConfig `yaml:"login_history"`
-	RateLimit    RateLimitConfig    `yaml:"rate_limit"`
+	Server       ServerConfig                   `yaml:"server"`
+	Database     DatabaseConfig                 `yaml:"database"`
+	Redis        RedisConfig                    `yaml:"redis"`
+	JWT          JWTConfig                      `yaml:"jwt"`
+	Email        client.EmailConfig             `yaml:"email"`
+	SMS          SMSConfig                      `yaml:"sms"`
+	Log          LandcLogFace.LogConfig         `yaml:"logger"`
+	Cache        CacheConfig                    `yaml:"cache"`
+	Password     PasswordConfig                 `yaml:"password"`
+	VerifyCode   VerifyCodeConfig               `yaml:"verify_code"`
+	HTTPClient   HTTPClientConfig               `yaml:"http_client"`
+	LoginHistory LoginHistoryConfig             `yaml:"login_history"`
+	RateLimit    RateLimitConfig                `yaml:"rate_limit"`
+	ThridParty   service.ThirdPartyGlobalConfig `yaml:",inline"`
 }
 
 // ServerConfig 服务器配置
@@ -40,12 +43,6 @@ type DatabaseConfig struct {
 	MaxIdleConns    int    `yaml:"max_idle_conns"`
 	MaxOpenConns    int    `yaml:"max_open_conns"`
 	ConnMaxLifetime int    `yaml:"conn_max_lifetime"`
-}
-type LogConfig struct {
-	Provider   string `yaml:"provider"`
-	Level      string `yaml:"level"`
-	Format     string `yaml:"format"`
-	OutputPath string `yaml:"outputPath"`
 }
 
 // RedisConfig Redis配置
@@ -68,12 +65,6 @@ type JWTConfig struct {
 	PublicKeyPath  string `yaml:"public_key_path"`
 	ExpiresIn      int    `yaml:"expires_in"`
 	RefreshIn      int    `yaml:"refresh_in"`
-}
-
-// EmailConfig 邮件配置
-type EmailConfig struct {
-	*mail.Config `yaml:",inline"`
-	From         string `yaml:"from"`
 }
 
 // SMSConfig 短信配置
@@ -119,6 +110,11 @@ type RateLimitConfig struct {
 // 全局配置实例
 var globalConfig *Config
 
+// SetGlobalConfig 设置全局配置
+func SetGlobalConfig(config *Config) {
+	globalConfig = config
+}
+
 // LoadConfig 加载配置
 func LoadConfig(filePath string) (*Config, error) {
 	// 读取配置文件
@@ -153,47 +149,7 @@ func GetConfig() *Config {
 		}
 
 		// 加载失败，返回默认配置
-		return &Config{
-			Server: ServerConfig{
-				Port:         8080,
-				Host:         "0.0.0.0",
-				ReadTimeout:  30,
-				WriteTimeout: 30,
-			},
-			JWT: JWTConfig{
-				SecretKey: "default_secret_key",
-				ExpiresIn: 7200,
-				RefreshIn: 2592000,
-			},
-			Redis: RedisConfig{
-				PoolSize:     10,
-				MinIdleConns: 5,
-				MaxRetries:   3,
-				DialTimeout:  5,
-				ReadTimeout:  3,
-				WriteTimeout: 3,
-			},
-			Cache: CacheConfig{
-				UserCacheExpire: 3600,
-			},
-			Password: PasswordConfig{
-				BcryptCost: 10,
-			},
-			VerifyCode: VerifyCodeConfig{
-				Length:     6,
-				ExpireTime: 300,
-			},
-			HTTPClient: HTTPClientConfig{
-				Timeout: 10,
-			},
-			LoginHistory: LoginHistoryConfig{
-				RetentionDays: 90,
-			},
-			RateLimit: RateLimitConfig{
-				VerifyCodeInterval:  60,
-				MaxVerifyCodePerDay: 10,
-			},
-		}
+		panic("配置加载失败")
 	}
 
 	return globalConfig

@@ -25,6 +25,9 @@ type UserService interface {
 	// Login 密码验证
 	Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error)
 
+	// Register 用户注册
+	Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error)
+
 	// LoginRecord 登录审计，记录登录历史和更新信任设备，由SSO回调
 	LoginRecord(ctx context.Context, req *model.LoginRecordRequest)
 
@@ -39,9 +42,6 @@ type UserService interface {
 
 	// ChangePassword 修改密码
 	ChangePassword(userID uint, oldPassword string, newPassword string) error
-
-	// Register 用户注册
-	Register(req *model.UserRegisterRequest) (*model.UserResponse, error)
 
 	// ResetPassword 重置密码
 	ResetPassword(email string, verifyCode string, newPassword string) error

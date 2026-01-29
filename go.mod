@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/LandcLi/LandcCommonApi v0.0.0-20260116152221-0779acd06034
-	github.com/LandcLi/LandcGoTools v0.0.0-20260125075742-540ac87cc2fd
+	github.com/LandcLi/LandcGoTools v0.0.0-20260129142318-a705be4bcc86
 	github.com/LandcLi/LandcLogFace v0.0.0-20260128153627-e6b3f81a9aa0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-redis/redis/v8 v8.11.5

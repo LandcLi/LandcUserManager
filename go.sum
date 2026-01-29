@@ -4,8 +4,8 @@ github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/LandcLi/LandcCommonApi v0.0.0-20260116152221-0779acd06034 h1:FqgbnT4+Pr4ahlA19sMTrs6dcHgYvgjrkyI4Y7N+6aY=
 github.com/LandcLi/LandcCommonApi v0.0.0-20260116152221-0779acd06034/go.mod h1:FLaJVEmkn8HXL4/dg0xwbOHBiPyhVV1xJtKQe89wPLM=
-github.com/LandcLi/LandcGoTools v0.0.0-20260125075742-540ac87cc2fd h1:/uMePtLWQWo1h6fvxIBak0gUXrZ1WyCC5XEnfZbpia4=
-github.com/LandcLi/LandcGoTools v0.0.0-20260125075742-540ac87cc2fd/go.mod h1:LUzVEjtt8UarSUkzaFHwqqlyJRto1l4bfmfE6cg2riM=
+github.com/LandcLi/LandcGoTools v0.0.0-20260129142318-a705be4bcc86 h1:PhCQPs2OHie11cGRV1ehk9+4JTJh4eZM4iOSAWaczEI=
+github.com/LandcLi/LandcGoTools v0.0.0-20260129142318-a705be4bcc86/go.mod h1:LUzVEjtt8UarSUkzaFHwqqlyJRto1l4bfmfE6cg2riM=
 github.com/LandcLi/LandcLogFace v0.0.0-20260128153627-e6b3f81a9aa0 h1:mF1s5cdHqS4OJQQPBc6IBwrYEhsFMLU5MI6BNXwWIXg=
 github.com/LandcLi/LandcLogFace v0.0.0-20260128153627-e6b3f81a9aa0/go.mod h1:nnmbmc52tvVWaYL5BFQMtuyP5byOnhObx30/KQjWKBI=
 github.com/bytedance/sonic v1.5.0/go.mod h1:ED5hyg4y6t3/9Ku1R6dU/4KyJ48DZ4jPhfY1O2AihPM=

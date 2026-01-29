@@ -12,6 +12,7 @@ var controller userController
 
 type userController interface {
 	Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error)
+	Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error)
 }
 
 func RegisterUserController(impl userController) {
@@ -31,6 +32,20 @@ func Login(c *gin.Context) {
 	resp, err := controller.Login(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+func Register(c *gin.Context) {
+	var req v1.RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := controller.Register(c.Request.Context(), &req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, resp)
