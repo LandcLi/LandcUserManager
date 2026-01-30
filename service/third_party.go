@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/LandcLi/LandcUserManager/model"
+	"github.com/LandcLi/LandcUserManager/utility/config"
 )
 
 // -------------------------- 对外暴露的核心接口 --------------------------
@@ -22,12 +23,6 @@ type AdapterFactory interface {
 	// Create 接收通用配置（map[string]interface{}），创建适配器实例
 	// 内部自行解析配置为专属Config，屏蔽外部感知
 	Create(config map[string]interface{}) (ThirdPartyAdapter, error)
-}
-
-// ThirdPartyGlobalConfig 库对外暴露的通用配置
-// 用户只需在ThirdParty节点下按类型配置参数，无需感知内部Config
-type ThirdPartyGlobalConfig struct {
-	ThirdParty map[string]map[string]interface{} `mapstructure:"third_party"` // key=适配器类型（如"wechat"），value=该类型的配置参数
 }
 
 // -------------------------- 工厂注册（用于自动初始化） --------------------------
@@ -81,7 +76,7 @@ func GetThirdPartyAdapter(adapterType string) (ThirdPartyAdapter, bool) {
 // InitWithConfig 库对外暴露的核心初始化函数
 // 用户只需传入通用配置，自动创建并注册所有适配器
 // 屏蔽Config解析、工厂创建等细节
-func InitWithConfig(globalConfig *ThirdPartyGlobalConfig) error {
+func InitWithConfig(globalConfig *config.ThirdPartyGlobalConfig) error {
 	// 遍历配置中的所有第三方类型（如"wechat"）
 	for adapterType, config := range globalConfig.ThirdParty {
 		// 1. 获取对应工厂（默认/用户自定义）

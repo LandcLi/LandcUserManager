@@ -3,22 +3,16 @@ package user
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/LandcLi/LandcGoTools/generate"
-	"github.com/LandcLi/LandcGoTools/mail"
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
 	"github.com/LandcLi/LandcUserManager/dao"
 	"github.com/LandcLi/LandcUserManager/service"
 
 	"github.com/LandcLi/LandcUserManager/model"
-	"github.com/LandcLi/LandcUserManager/utility/client"
 	"github.com/LandcLi/LandcUserManager/utility/config"
-	"github.com/LandcLi/LandcUserManager/utility/db"
-	"github.com/LandcLi/LandcUserManager/utility/logger"
 
-	"github.com/go-redis/redis/v8"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -135,7 +129,8 @@ func (s *userServiceImpl) handleAuthByVerifyCode(ctx context.Context, req *v1.Lo
 			return nil, errors.New("用户不存在")
 		}
 	}
-	err = s.checkVerifyCode(user, req.VerifyType, req.AuthCode)
+	commonService := service.GetCommonService()
+	err = commonService.CheckVerifyCode(ctx, req.Identifier, req.VerifyType, req.AuthCode, "login")
 	if err != nil {
 		return nil, errors.New("验证码错误")
 	}
@@ -319,57 +314,6 @@ func (s *userServiceImpl) detectTrustedDevice(userID uint, deviceFingerprint str
 	return true
 }
 
-// SendVerifyCode 发送验证码 todo 完善发送验证码逻辑
-func (s *userServiceImpl) SendVerifyCode(req *model.SendVerifyCodeRequest) error {
-	ctx := context.Background()
-
-	// 生成6位数字验证码
-	verifyCode := generate.MustCaptcha(6)
-
-	// 构建Redis键
-	var key string
-	switch req.VerifyType {
-	case "EMAIL":
-		key = fmt.Sprintf("verify_code:email:%s:%s", req.Identifier, req.Action)
-	case "PHONE":
-		key = fmt.Sprintf("verify_code:phone:%s:%s", req.Identifier, req.Action)
-	default:
-		return errors.New("无效的验证类型")
-	}
-	// TODO 不应该强依赖Redis，使用数据库存储，当Redis不可用时，应该使用数据库存储验证码
-	// 存储验证码到Redis，设置5分钟过期
-	redisClient := db.GetRedis()
-	if redisClient == nil {
-		logger.Errorf(ctx, "Redis客户端未初始化")
-		return errors.New("验证码发送失败")
-	}
-
-	err := redisClient.Set(ctx, key, verifyCode, 5*time.Minute).Err()
-	if err != nil {
-		logger.Errorf(ctx, "存储验证码到Redis失败: %v", err)
-		return errors.New("验证码发送失败")
-	}
-
-	// 发送验证码
-	switch req.VerifyType {
-	case "EMAIL":
-		// 发送邮件验证码
-		err = s.sendMail(req.Identifier, "验证码", fmt.Sprintf("您的验证码是: %s，5分钟内有效", verifyCode))
-	case "PHONE":
-		// 发送短信验证码
-		err = s.sendSMS(req.Identifier, verifyCode)
-	default:
-		return errors.New("无效的验证类型")
-	}
-
-	if err != nil {
-		logger.Errorf(ctx, "发送验证码失败: %v", err)
-		return errors.New("验证码发送失败")
-	}
-
-	return nil
-}
-
 func (s *userServiceImpl) checkPassword(user *model.User, password string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
@@ -378,51 +322,8 @@ func (s *userServiceImpl) checkPassword(user *model.User, password string) error
 	return nil
 }
 
-// checkVerifyCode 验证验证码
-func (s *userServiceImpl) checkVerifyCode(user *model.User, verifyCode string, verifyType string) error {
-	ctx := context.Background()
-
-	// 验证验证码
-	var key string
-	switch verifyType {
-	case "EMAIL":
-		key = fmt.Sprintf("verify_code:email:%s:login", user.Email)
-	case "PHONE":
-		key = fmt.Sprintf("verify_code:phone:%s:login", user.Phone)
-	default:
-		return errors.New("无效的验证类型")
-	}
-
-	// 从Redis获取验证码
-	// TODO 不应该强依赖Redis，使用数据库存储，当Redis不可用时，应该使用数据库存储验证码
-	redisClient := db.GetRedis()
-	if redisClient == nil {
-		logger.Errorf(ctx, "Redis客户端未初始化")
-		return errors.New("验证码验证失败")
-	}
-
-	storedCode, err := redisClient.Get(ctx, key).Result()
-	if err != nil {
-		if err == redis.Nil {
-			return errors.New("验证码已过期或不存在")
-		}
-		logger.Errorf(ctx, "从Redis获取验证码失败: %v", err)
-		return errors.New("验证码验证失败")
-	}
-
-	// 验证验证码
-	if storedCode != verifyCode {
-		return errors.New("验证码错误")
-	}
-
-	// 验证码验证成功后删除
-	_ = redisClient.Del(ctx, key).Err()
-
-	return nil
-}
-
 // GetUserInfo 获取用户信息 todo 完善用户信息返回逻辑
-func (s *userServiceImpl) GetUserInfo(userID uint) (*model.UserResponse, error) {
+func (s *userServiceImpl) GetUserInfo(userID uint) (*model.User, error) {
 	// 查找用户
 	user, err := s.userDao.FindByID(userID)
 	if err != nil {
@@ -430,11 +331,11 @@ func (s *userServiceImpl) GetUserInfo(userID uint) (*model.UserResponse, error) 
 	}
 
 	// 转换为响应对象
-	return user.ToResponse(), nil
+	return user, nil
 }
 
 // UpdateUserInfo 更新用户信息 todo 完善更新用户信息逻辑
-func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone string, avatar string) (*model.UserResponse, error) {
+func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone string, avatar string) (*model.User, error) {
 	// 查找用户
 	user, err := s.userDao.FindByID(userID)
 	if err != nil {
@@ -458,8 +359,7 @@ func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone str
 		return nil, errors.New("更新用户信息失败")
 	}
 
-	// 转换为响应对象
-	return user.ToResponse(), nil
+	return user, nil
 }
 
 // ChangePassword 修改密码 todo 完善修改密码逻辑
@@ -497,8 +397,8 @@ func (s *userServiceImpl) ChangePassword(userID uint, oldPassword string, newPas
 // Register 用户注册
 func (s *userServiceImpl) Register(ctx context.Context, req *v1.RegisterRequest) (res *v1.RegisterResponse, err error) {
 	if req.AuthType == "VERIFY_CODE" {
-		// 验证验证码
-		err = s.checkRegisterVerifyCode(req.Identifier, req.VerifyType, req.AuthCode)
+		commonService := service.GetCommonService()
+		err = commonService.CheckVerifyCode(ctx, req.Identifier, req.VerifyType, req.AuthCode, "register")
 		if err != nil {
 			return nil, err
 		}
@@ -535,99 +435,32 @@ func (s *userServiceImpl) Register(ctx context.Context, req *v1.RegisterRequest)
 	}, nil
 }
 
-// checkRegisterVerifyCode 验证注册验证码
-func (s *userServiceImpl) checkRegisterVerifyCode(identifier string, verifyType string, verifyCode string) error {
-	ctx := context.Background()
-
-	// 构建Redis键
-	var key string
-	switch verifyType {
-	case "EMAIL":
-		key = fmt.Sprintf("verify_code:email:%s:register", identifier)
-	case "PHONE":
-		key = fmt.Sprintf("verify_code:phone:%s:register", identifier)
-	default:
-		return errors.New("无效的验证类型")
-	}
-
-	// 从Redis获取验证码
-	redisClient := db.GetRedis()
-	if redisClient == nil {
-		logger.Errorf(ctx, "Redis客户端未初始化")
-		return errors.New("验证码验证失败")
-	}
-
-	storedCode, err := redisClient.Get(ctx, key).Result()
-	if err != nil {
-		if err == redis.Nil {
-			return errors.New("验证码已过期或不存在")
-		}
-		logger.Errorf(ctx, "从Redis获取验证码失败: %v", err)
-		return errors.New("验证码验证失败")
-	}
-
-	// 验证验证码
-	if storedCode != verifyCode {
-		return errors.New("验证码错误")
-	}
-
-	// 验证码验证成功后删除
-	_ = redisClient.Del(ctx, key).Err()
-
-	return nil
-}
-
 // ResetPassword 重置密码 todo 完善重置密码逻辑
 func (s *userServiceImpl) ResetPassword(email string, verifyCode string, newPassword string) error {
 	ctx := context.Background()
 
-	// 验证验证码
-	key := fmt.Sprintf("verify_code:email:%s:reset", email)
-
-	// 从Redis获取验证码
-	redisClient := db.GetRedis()
-	if redisClient == nil {
-		logger.Errorf(ctx, "Redis客户端未初始化")
-		return errors.New("验证码验证失败")
-	}
-
-	storedCode, err := redisClient.Get(ctx, key).Result()
+	commonService := service.GetCommonService()
+	err := commonService.CheckVerifyCode(ctx, email, "EMAIL", verifyCode, "reset")
 	if err != nil {
-		if err == redis.Nil {
-			return errors.New("验证码已过期或不存在")
-		}
-		logger.Errorf(ctx, "从Redis获取验证码失败: %v", err)
-		return errors.New("验证码验证失败")
+		return err
 	}
 
-	// 验证验证码
-	if storedCode != verifyCode {
-		return errors.New("验证码错误")
-	}
-
-	// 查找用户
 	user, err := s.userDao.FindByEmail(email)
 	if err != nil {
 		return errors.New("用户不存在")
 	}
 
-	// 加密新密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return errors.New("密码加密失败")
 	}
 
-	// 更新密码
 	user.Password = string(hashedPassword)
 
-	// 保存更新
 	_, err = s.userDao.Update(user)
 	if err != nil {
 		return errors.New("重置密码失败")
 	}
-
-	// 清除验证码
-	_ = redisClient.Del(ctx, key).Err()
 
 	return nil
 }
@@ -636,39 +469,18 @@ func (s *userServiceImpl) ResetPassword(email string, verifyCode string, newPass
 func (s *userServiceImpl) SendResetPasswordCode(email string) error {
 	ctx := context.Background()
 
-	// 检查用户是否存在
 	_, err := s.userDao.FindByEmail(email)
 	if err != nil {
 		return errors.New("用户不存在")
 	}
 
-	// 生成6位数字验证码
-	verifyCode := generate.MustCaptcha(6)
-
-	// 构建Redis键
-	key := fmt.Sprintf("verify_code:email:%s:reset", email)
-
-	// 存储验证码到Redis，设置5分钟过期
-	redisClient := db.GetRedis()
-	if redisClient == nil {
-		logger.Errorf(ctx, "Redis客户端未初始化")
-		return errors.New("验证码发送失败")
+	commonService := service.GetCommonService()
+	req := &model.SendVerifyCodeRequest{
+		Identifier: email,
+		VerifyType: "EMAIL",
+		Action:     "reset",
 	}
-
-	err = redisClient.Set(ctx, key, verifyCode, 5*time.Minute).Err()
-	if err != nil {
-		logger.Errorf(ctx, "存储验证码到Redis失败: %v", err)
-		return errors.New("验证码发送失败")
-	}
-
-	// 发送验证码邮件
-	err = s.sendMail(email, "重置密码验证码", fmt.Sprintf("您的重置密码验证码是: %s，5分钟内有效", verifyCode))
-	if err != nil {
-		logger.Errorf(ctx, "发送验证码失败: %v", err)
-		return errors.New("验证码发送失败")
-	}
-
-	return nil
+	return commonService.SendVerifyCode(ctx, req)
 }
 
 // detectDifferentLocation 检测异地登录
@@ -678,34 +490,4 @@ func (s *userServiceImpl) detectDifferentLocation(userID uint, ip string) bool {
 	// 暂时简单返回true，表示异地登录
 	// 注意如果用户没有历史登陆记录，为避免错误处理用户请求，需返回false
 	return true
-}
-
-// sendMail 发送邮件
-func (s *userServiceImpl) sendMail(to string, subject string, body string) error {
-	mailClient := client.GetMailClient()
-	if mailClient == nil {
-		return errors.New("邮件客户端未初始化")
-	}
-	// 构建消息
-	message := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", s.config.Email.From, to, subject, body)
-
-	// 发送邮件
-	return mailClient.Send(&mail.Email{
-		From:    s.config.Email.From,
-		To:      []string{to},
-		Subject: subject,
-		Body:    message,
-	})
-}
-
-// sendSMS 发送短信
-func (s *userServiceImpl) sendSMS(phone string, code string) error {
-	// 检查配置
-	if s.config == nil || s.config.SMS.ApiKey == "" {
-		return errors.New("短信配置未设置")
-	}
-
-	// 这里应该调用短信服务提供商的API
-	// 暂时返回成功
-	return nil
 }

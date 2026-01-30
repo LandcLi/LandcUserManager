@@ -49,24 +49,6 @@ type LoginRecordRequest struct {
 	Device            string `json:"device"`
 	Status            int    `json:"status"`
 }
-type LoginRequest struct {
-	Identifier        string `json:"identifier" binding:"required,min=3,max=50"`
-	AuthCode          string `json:"verifyCode" binding:"required,len=6"` //第三方登陆时为openid,sso系统获取code、access_token然后再调用此接口
-	AccessToken       string `json:"accessToken"`
-	RefreshToken      string `json:"refreshToken"`
-	VerifyType        string `json:"verifyType" binding:"required,oneof=EMAIL PHONE USERNAME WECHAT GITHUB ALIPAY DINGTALK"`
-	AuthType          string `json:"authType" binding:"required,oneof=PASSWORD VERIFY_CODE THIRD_PARTY"`
-	IP                string `json:"ip" binding:"required,ip"`
-	DeviceFingerprint string `json:"deviceFingerprint" binding:"required"`
-	UserAgent         string `json:"userAgent" binding:"required"`
-}
-
-// LoginResponse 密码验证响应
-type LoginResponse struct {
-	UserID            uint `json:"userId"`
-	DifferentLocation bool `json:"differentLocation"`
-	IsNewDevice       bool `json:"isNewDevice"`
-}
 
 // SendVerifyCodeRequest 验证码请求
 type SendVerifyCodeRequest struct {
@@ -99,28 +81,4 @@ type UserRegisterRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 	Nickname string `json:"nickname" binding:"max=50"`
 	Phone    string `json:"phone" binding:"max=20"`
-}
-
-// UserResponse 用户响应
-type UserResponse struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Nickname string `json:"nickname"`
-	Avatar   string `json:"avatar"`
-	Phone    string `json:"phone"`
-	Status   int    `json:"status"`
-}
-
-// ToResponse 转换为响应对象
-func (u *User) ToResponse() *UserResponse {
-	return &UserResponse{
-		ID:       u.ID,
-		Username: u.Username,
-		Email:    u.Email,
-		Nickname: u.Nickname,
-		Avatar:   u.Avatar,
-		Phone:    u.Phone,
-		Status:   u.Status,
-	}
 }

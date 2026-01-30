@@ -31,14 +31,11 @@ type UserService interface {
 	// LoginRecord 登录审计，记录登录历史和更新信任设备，由SSO回调
 	LoginRecord(ctx context.Context, req *model.LoginRecordRequest)
 
-	// SendVerifyCode 发送验证码
-	SendVerifyCode(req *model.SendVerifyCodeRequest) error
-
 	// GetUserInfo 获取用户信息
-	GetUserInfo(userID uint) (*model.UserResponse, error)
+	GetUserInfo(userID uint) (*model.User, error)
 
 	// UpdateUserInfo 更新用户信息
-	UpdateUserInfo(userID uint, nickname string, phone string, avatar string) (*model.UserResponse, error)
+	UpdateUserInfo(userID uint, nickname string, phone string, avatar string) (*model.User, error)
 
 	// ChangePassword 修改密码
 	ChangePassword(userID uint, oldPassword string, newPassword string) error

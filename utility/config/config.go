@@ -6,27 +6,32 @@ import (
 	"os"
 
 	"github.com/LandcLi/LandcLogFace"
-	"github.com/LandcLi/LandcUserManager/service"
 	"github.com/LandcLi/LandcUserManager/utility/client"
 	"gopkg.in/yaml.v2"
 )
 
+// ThirdPartyGlobalConfig 库对外暴露的通用配置
+// 用户只需在ThirdParty节点下按类型配置参数，无需感知内部Config
+type ThirdPartyGlobalConfig struct {
+	ThirdParty map[string]map[string]interface{} `mapstructure:"third_party"` // key=适配器类型（如"wechat"），value=该类型的配置参数
+}
+
 // Config 配置结构
 type Config struct {
-	Server       ServerConfig                   `yaml:"server"`
-	Database     DatabaseConfig                 `yaml:"database"`
-	Redis        RedisConfig                    `yaml:"redis"`
-	JWT          JWTConfig                      `yaml:"jwt"`
-	Email        client.EmailConfig             `yaml:"email"`
-	SMS          SMSConfig                      `yaml:"sms"`
-	Log          LandcLogFace.LogConfig         `yaml:"logger"`
-	Cache        CacheConfig                    `yaml:"cache"`
-	Password     PasswordConfig                 `yaml:"password"`
-	VerifyCode   VerifyCodeConfig               `yaml:"verify_code"`
-	HTTPClient   HTTPClientConfig               `yaml:"http_client"`
-	LoginHistory LoginHistoryConfig             `yaml:"login_history"`
-	RateLimit    RateLimitConfig                `yaml:"rate_limit"`
-	ThridParty   service.ThirdPartyGlobalConfig `yaml:",inline"`
+	Server       ServerConfig           `yaml:"server"`
+	Database     DatabaseConfig         `yaml:"database"`
+	Redis        RedisConfig            `yaml:"redis"`
+	JWT          JWTConfig              `yaml:"jwt"`
+	Email        client.EmailConfig     `yaml:"email"`
+	SMS          SMSConfig              `yaml:"sms"`
+	Log          LandcLogFace.LogConfig `yaml:"logger"`
+	Cache        CacheConfig            `yaml:"cache"`
+	Password     PasswordConfig         `yaml:"password"`
+	VerifyCode   VerifyCodeConfig       `yaml:"verify_code"`
+	HTTPClient   HTTPClientConfig       `yaml:"http_client"`
+	LoginHistory LoginHistoryConfig     `yaml:"login_history"`
+	RateLimit    RateLimitConfig        `yaml:"rate_limit"`
+	ThridParty   ThirdPartyGlobalConfig `yaml:",inline"`
 }
 
 // ServerConfig 服务器配置
