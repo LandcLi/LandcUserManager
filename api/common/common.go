@@ -8,17 +8,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var controller commonController
+var controller commonApi
 
-type commonController interface {
+type commonApi interface {
 	SendVerifyCode(ctx context.Context, req *v1.SendVerifyCodeRequest) (*v1.SendVerifyCodeResponse, error)
 }
 
-func RegisterCommonController(impl commonController) {
+func RegisterCommonController(impl commonApi) {
 	controller = impl
 }
 
-func GetCommonController() commonController {
+func GetCommonController() commonApi {
 	return controller
 }
 

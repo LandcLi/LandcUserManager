@@ -8,9 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var controller userController
+var controller userApi
 
-type userController interface {
+type userApi interface {
 	Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error)
 	Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error)
 	LoginRecord(ctx context.Context, req *v1.LoginRecordRequest) (*v1.LoginRecordResponse, error)
@@ -20,11 +20,11 @@ type userController interface {
 	ResetPassword(ctx context.Context, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error)
 }
 
-func RegisterUserController(impl userController) {
+func RegisterUserController(impl userApi) {
 	controller = impl
 }
 
-func GetUserController() userController {
+func GetUserController() userApi {
 	return controller
 }
 
