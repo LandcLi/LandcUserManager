@@ -8,7 +8,7 @@ var (
 	thirdPartyUserDao ThirdPartyUser
 )
 
-func SetThirdPartyUserImpl(impl ThirdPartyUser) {
+func RegisterThirdPartyUserImpl(impl ThirdPartyUser) {
 	thirdPartyUserDao = impl
 }
 

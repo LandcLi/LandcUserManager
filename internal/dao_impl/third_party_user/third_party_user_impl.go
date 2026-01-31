@@ -10,7 +10,7 @@ import (
 
 func init() {
 	if dao.GetThirdPartyUser() == nil {
-		dao.SetThirdPartyUserImpl(NewThirdPartyUserImpl())
+		dao.RegisterThirdPartyUserImpl(NewThirdPartyUserImpl())
 	}
 }
 

@@ -18,7 +18,7 @@ import (
 
 func init() {
 	if service.GetUserService() == nil {
-		service.SetUserService(NewUserServiceImpl())
+		service.RegisterUserService(NewUserServiceImpl())
 	}
 }
 

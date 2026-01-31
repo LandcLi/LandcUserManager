@@ -16,7 +16,7 @@ import (
 
 func init() {
 	if dao.GetUser() == nil {
-		dao.SetUserImpl(NewUserImpl())
+		dao.RegisterUserImpl(NewUserImpl())
 	}
 }
 

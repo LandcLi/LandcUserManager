@@ -8,7 +8,7 @@ var (
 	userDao User
 )
 
-func SetUserImpl(impl User) {
+func RegisterUserImpl(impl User) {
 	userDao = impl
 }
 

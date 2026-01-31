@@ -10,7 +10,7 @@ import (
 
 func init() {
 	if dao.GetTrustedDevice() == nil {
-		dao.SetTrustedDeviceImpl(NewTrustedDeviceImpl())
+		dao.RegisterTrustedDeviceImpl(NewTrustedDeviceImpl())
 	}
 }
 

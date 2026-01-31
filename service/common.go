@@ -10,7 +10,7 @@ var (
 	commonService CommonService
 )
 
-func SetCommonService(impl CommonService) {
+func RegisterCommonService(impl CommonService) {
 	commonService = impl
 }
 

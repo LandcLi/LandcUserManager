@@ -8,7 +8,7 @@ var (
 	loginHistoryDao LoginHistory
 )
 
-func SetLoginHistoryImpl(impl LoginHistory) {
+func RegisterLoginHistoryImpl(impl LoginHistory) {
 	loginHistoryDao = impl
 }
 

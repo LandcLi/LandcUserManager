@@ -11,7 +11,7 @@ var (
 	userService UserService
 )
 
-func SetUserService(impl UserService) {
+func RegisterUserService(impl UserService) {
 	userService = impl
 }
 

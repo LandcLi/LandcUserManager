@@ -8,7 +8,7 @@ var (
 	trustedDeviceDao TrustedDevice
 )
 
-func SetTrustedDeviceImpl(impl TrustedDevice) {
+func RegisterTrustedDeviceImpl(impl TrustedDevice) {
 	trustedDeviceDao = impl
 }
 

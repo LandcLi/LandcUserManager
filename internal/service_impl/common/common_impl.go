@@ -31,7 +31,7 @@ func NewCommonService() service.CommonService {
 
 func init() {
 	if service.GetCommonService() == nil {
-		service.SetCommonService(NewCommonService())
+		service.RegisterCommonService(NewCommonService())
 	}
 }
 

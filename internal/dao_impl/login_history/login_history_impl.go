@@ -12,7 +12,7 @@ import (
 
 func init() {
 	if dao.GetLoginHistory() == nil {
-		dao.SetLoginHistoryImpl(NewLoginHistoryImpl())
+		dao.RegisterLoginHistoryImpl(NewLoginHistoryImpl())
 	}
 }
 
