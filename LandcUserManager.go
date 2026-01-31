@@ -1,6 +1,8 @@
 package landcusermanager
 
 import (
+	"github.com/LandcLi/LandcCommonApi/middleware"
+	ginLogger "github.com/LandcLi/LandcLogFace/adapter/gin"
 	"github.com/LandcLi/LandcUserManager/api"
 	_ "github.com/LandcLi/LandcUserManager/internal"
 	"github.com/LandcLi/LandcUserManager/utility/client"
@@ -50,6 +52,9 @@ func InitLUMDefault(configPath string) (*gin.Engine, error) {
 	db.InitDatabase(&cfg.Database)
 	client.InitMailClientByConfig(cfg.Email.Config)
 
+	ginEngine.Use(middleware.GinMiddleware())
+	ginLogger.UseWithGin(ginEngine, logger.GetLogger())
+
 	// 注册默认路由
 	if cfg.Server.UserDefaultRoute {
 		api.RegisterDefaultRoutes(ginEngine)
@@ -92,6 +97,9 @@ func InitLUMWithConfig(cfg *config.Config) (*gin.Engine, error) {
 	db.InitDatabase(&cfg.Database)
 	client.InitMailClientByConfig(cfg.Email.Config)
 
+	ginEngine.Use(middleware.GinMiddleware())
+	ginLogger.UseWithGin(ginEngine, logger.GetLogger())
+
 	// 注册默认路由
 	if cfg.Server.UserDefaultRoute {
 		api.RegisterDefaultRoutes(ginEngine)
@@ -130,6 +138,9 @@ func InitLUMWithConfigAndGin(cfg *config.Config, ginEngine *gin.Engine) error {
 	_, _ = db.InitRedis(&cfg.Redis)
 	db.InitDatabase(&cfg.Database)
 	client.InitMailClientByConfig(cfg.Email.Config)
+
+	ginEngine.Use(middleware.GinMiddleware())
+	ginLogger.UseWithGin(ginEngine, logger.GetLogger())
 
 	// 注册默认路由
 	if cfg.Server.UserDefaultRoute {
