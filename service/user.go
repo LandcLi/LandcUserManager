@@ -8,20 +8,20 @@ import (
 )
 
 var (
-	userService UserService
+	userServiceImpl userService
 )
 
-func RegisterUserService(impl UserService) {
-	userService = impl
+func RegisterUserService(impl userService) {
+	userServiceImpl = impl
 }
 
-func GetUserService() UserService {
-	return userService
+func GetUserService() userService {
+	return userServiceImpl
 }
 
 // TODO 扫码登录、生物登录
-// UserService 认证服务
-type UserService interface {
+// userService 认证服务
+type userService interface {
 	// Login 密码验证
 	Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error)
 

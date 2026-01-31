@@ -15,8 +15,8 @@ import (
 )
 
 func init() {
-	if dao.GetUser() == nil {
-		dao.RegisterUserImpl(NewUserImpl())
+	if dao.GetUserDao() == nil {
+		dao.RegisterUserDapImpl(NewUserImpl())
 	}
 }
 
@@ -27,7 +27,7 @@ type userImpl struct {
 }
 
 // NewUserImpl 创建用户仓库实例
-func NewUserImpl() dao.User {
+func NewUserImpl() *userImpl {
 	return &userImpl{
 		orm:         db.GetDB(),
 		redisClient: db.GetRedis(),

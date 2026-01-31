@@ -7,19 +7,19 @@ import (
 )
 
 var (
-	commonService CommonService
+	commonServiceImpl commonService
 )
 
-func RegisterCommonService(impl CommonService) {
-	commonService = impl
+func RegisterCommonService(impl commonService) {
+	commonServiceImpl = impl
 }
 
-func GetCommonService() CommonService {
-	return commonService
+func GetCommonService() commonService {
+	return commonServiceImpl
 }
 
-// CommonService 通用服务
-type CommonService interface {
+// commonService 通用服务
+type commonService interface {
 	// SendVerifyCode 发送验证码
 	SendVerifyCode(ctx context.Context, req *model.SendVerifyCodeRequest) error
 

@@ -16,20 +16,17 @@ func init() {
 }
 
 type userController struct {
-	UserService service.UserService
 }
 
 func NewUserController() *userController {
-	return &userController{
-		UserService: service.GetUserService(),
-	}
+	return &userController{}
 }
 func (uc *userController) Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error) {
-	return uc.UserService.Login(ctx, req)
+	return service.GetUserService().Login(ctx, req)
 }
 
 func (uc *userController) Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error) {
-	return uc.UserService.Register(ctx, req)
+	return service.GetUserService().Register(ctx, req)
 }
 
 func (uc *userController) LoginRecord(ctx context.Context, req *v1.LoginRecordRequest) (*v1.LoginRecordResponse, error) {
@@ -43,14 +40,14 @@ func (uc *userController) LoginRecord(ctx context.Context, req *v1.LoginRecordRe
 		Device:            req.Device,
 		Status:            req.Status,
 	}
-	uc.UserService.LoginRecord(ctx, serviceReq)
+	service.GetUserService().LoginRecord(ctx, serviceReq)
 	return &v1.LoginRecordResponse{
 		Success: true,
 	}, nil
 }
 
 func (uc *userController) GetUserInfo(ctx context.Context, req *v1.GetUserInfoRequest) (*v1.GetUserInfoResponse, error) {
-	user, err := uc.UserService.GetUserInfo(req.UserID)
+	user, err := service.GetUserService().GetUserInfo(req.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +65,7 @@ func (uc *userController) GetUserInfo(ctx context.Context, req *v1.GetUserInfoRe
 }
 
 func (uc *userController) UpdateUserInfo(ctx context.Context, req *v1.UpdateUserInfoRequest) (*v1.UpdateUserInfoResponse, error) {
-	user, err := uc.UserService.UpdateUserInfo(req.UserID, req.Nickname, req.Phone, req.Avatar)
+	user, err := service.GetUserService().UpdateUserInfo(req.UserID, req.Nickname, req.Phone, req.Avatar)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +83,7 @@ func (uc *userController) UpdateUserInfo(ctx context.Context, req *v1.UpdateUser
 }
 
 func (uc *userController) ChangePassword(ctx context.Context, req *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error) {
-	err := uc.UserService.ChangePassword(req.UserID, req.OldPassword, req.NewPassword)
+	err := service.GetUserService().ChangePassword(req.UserID, req.OldPassword, req.NewPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +93,7 @@ func (uc *userController) ChangePassword(ctx context.Context, req *v1.ChangePass
 }
 
 func (uc *userController) ResetPassword(ctx context.Context, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error) {
-	err := uc.UserService.ResetPassword(req.Email, req.VerifyCode, req.NewPassword)
+	err := service.GetUserService().ResetPassword(req.Email, req.VerifyCode, req.NewPassword)
 	if err != nil {
 		return nil, err
 	}

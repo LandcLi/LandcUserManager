@@ -5,19 +5,19 @@ import (
 )
 
 var (
-	userDao User
+	userDaoImpl userDao
 )
 
-func RegisterUserImpl(impl User) {
-	userDao = impl
+func RegisterUserDapImpl(impl userDao) {
+	userDaoImpl = impl
 }
 
-func GetUser() User {
-	return userDao
+func GetUserDao() userDao {
+	return userDaoImpl
 }
 
-// User 用户仓库接口
-type User interface {
+// userDao 用户仓库接口
+type userDao interface {
 	// Create 创建用户
 	Create(user *model.User) (*model.User, error)
 

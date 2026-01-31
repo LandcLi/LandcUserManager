@@ -11,8 +11,8 @@ import (
 )
 
 func init() {
-	if dao.GetLoginHistory() == nil {
-		dao.RegisterLoginHistoryImpl(NewLoginHistoryImpl())
+	if dao.GetLoginHistoryDao() == nil {
+		dao.RegisterLoginHistoryDaoImpl(NewLoginHistoryImpl())
 	}
 }
 
@@ -22,7 +22,7 @@ type loginHistoryImpl struct {
 }
 
 // NewLoginHistoryImpl 创建登录历史仓库实例
-func NewLoginHistoryImpl() dao.LoginHistory {
+func NewLoginHistoryImpl() *loginHistoryImpl {
 	return &loginHistoryImpl{
 		orm: db.GetDB(),
 	}

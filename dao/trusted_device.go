@@ -5,19 +5,19 @@ import (
 )
 
 var (
-	trustedDeviceDao TrustedDevice
+	trustedDeviceDaoImpl trustedDeviceDao
 )
 
-func RegisterTrustedDeviceImpl(impl TrustedDevice) {
-	trustedDeviceDao = impl
+func RegisterTrustedDeviceDaoImpl(impl trustedDeviceDao) {
+	trustedDeviceDaoImpl = impl
 }
 
-func GetTrustedDevice() TrustedDevice {
-	return trustedDeviceDao
+func GetTrustedDeviceDao() trustedDeviceDao {
+	return trustedDeviceDaoImpl
 }
 
-// TrustedDevice 信任设备仓库接口
-type TrustedDevice interface {
+// trustedDeviceDao 信任设备仓库接口
+type trustedDeviceDao interface {
 	// Create 创建信任设备
 	Create(trustedDevice *model.TrustedDevice) (*model.TrustedDevice, error)
 

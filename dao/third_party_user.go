@@ -5,19 +5,19 @@ import (
 )
 
 var (
-	thirdPartyUserDao ThirdPartyUser
+	thirdPartyUserDaoImpl thirdPartyUserDao
 )
 
-func RegisterThirdPartyUserImpl(impl ThirdPartyUser) {
-	thirdPartyUserDao = impl
+func RegisterThirdPartyUserDaoImpl(impl thirdPartyUserDao) {
+	thirdPartyUserDaoImpl = impl
 }
 
-func GetThirdPartyUser() ThirdPartyUser {
-	return thirdPartyUserDao
+func GetThirdPartyUserDao() thirdPartyUserDao {
+	return thirdPartyUserDaoImpl
 }
 
-// ThirdPartyUser 第三方用户仓库接口
-type ThirdPartyUser interface {
+// thirdPartyUserDao 第三方用户仓库接口
+type thirdPartyUserDao interface {
 	// Create 创建第三方用户关联
 	Create(thirdPartyUserMeta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error)
 

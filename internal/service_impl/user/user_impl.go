@@ -25,23 +25,15 @@ func init() {
 // TODO 扫码登录、生物登录
 // UserService 认证服务
 type userServiceImpl struct {
-	userDao           dao.User
-	loginHistoryDao   dao.LoginHistory
-	trustedDeviceDao  dao.TrustedDevice
-	thirdPartyUserDao dao.ThirdPartyUser
-	config            *config.Config
+	config *config.Config
 }
 
 // NewUserService 创建认证服务实例
-func NewUserServiceImpl() service.UserService {
+func NewUserServiceImpl() *userServiceImpl {
 	// Go 1.20+ 不需要手动初始化随机数种子
 	// 系统会自动初始化
 	service := &userServiceImpl{
-		userDao:           dao.GetUser(),
-		loginHistoryDao:   dao.GetLoginHistory(),
-		trustedDeviceDao:  dao.GetTrustedDevice(),
-		thirdPartyUserDao: dao.GetThirdPartyUser(),
-		config:            config.GetConfig(),
+		config: config.GetConfig(),
 	}
 
 	return service
@@ -91,11 +83,11 @@ func (s *userServiceImpl) handleAuthByPassword(ctx context.Context, req *v1.Logi
 	)
 	switch req.VerifyType {
 	case "EMAIL":
-		user, err = s.userDao.FindByEmailFromDB(req.Identifier)
+		user, err = dao.GetUserDao().FindByEmailFromDB(req.Identifier)
 	case "PHONE":
-		user, err = s.userDao.FindByPhoneFromDB(req.Identifier)
+		user, err = dao.GetUserDao().FindByPhoneFromDB(req.Identifier)
 	case "USERNAME":
-		user, err = s.userDao.FindByUsernameFromDB(req.Identifier)
+		user, err = dao.GetUserDao().FindByUsernameFromDB(req.Identifier)
 	default:
 		return nil, errors.New("无效的验证类型")
 	}
@@ -117,9 +109,9 @@ func (s *userServiceImpl) handleAuthByVerifyCode(ctx context.Context, req *v1.Lo
 	)
 	switch req.VerifyType {
 	case "EMAIL":
-		user, err = s.userDao.FindByEmailFromDB(req.Identifier)
+		user, err = dao.GetUserDao().FindByEmailFromDB(req.Identifier)
 	case "PHONE":
-		user, err = s.userDao.FindByPhoneFromDB(req.Identifier)
+		user, err = dao.GetUserDao().FindByPhoneFromDB(req.Identifier)
 	default:
 		return nil, errors.New("无效的验证类型")
 	}
@@ -154,29 +146,26 @@ func (s *userServiceImpl) handleAuthByThirdParty(ctx context.Context, req *v1.Lo
 	}
 	var thirdPartyMeta *model.ThirdPartyUserMeta
 
-	// 1. 首先根据OpenID和提供商查找关联
-	if s.thirdPartyUserDao != nil {
-		thirdPartyMeta, err = s.thirdPartyUserDao.FindByOpenIDAndProvider(thirdPartyUser.OpenID, req.VerifyType)
+	thirdPartyMeta, err = dao.GetThirdPartyUserDao().FindByOpenIDAndProvider(thirdPartyUser.OpenID, req.VerifyType)
+	if err == nil && thirdPartyMeta != nil {
+		// 找到关联，获取用户信息
+		user, err = dao.GetUserDao().FindByID(thirdPartyMeta.UserID)
+	}
+	// 2. 如果OpenID未找到，尝试通过UnionID查找
+	if thirdPartyUser.UnionID != "" && user == nil {
+		thirdPartyMeta, err = dao.GetThirdPartyUserDao().FindByUnionID(thirdPartyUser.UnionID)
 		if err == nil && thirdPartyMeta != nil {
 			// 找到关联，获取用户信息
-			user, err = s.userDao.FindByID(thirdPartyMeta.UserID)
-		}
-		// 2. 如果OpenID未找到，尝试通过UnionID查找
-		if thirdPartyUser.UnionID != "" && user == nil {
-			thirdPartyMeta, err = s.thirdPartyUserDao.FindByUnionID(thirdPartyUser.UnionID)
-			if err == nil && thirdPartyMeta != nil {
-				// 找到关联，获取用户信息
-				user, err = s.userDao.FindByID(thirdPartyMeta.UserID)
-			}
+			user, err = dao.GetUserDao().FindByID(thirdPartyMeta.UserID)
 		}
 	}
 
 	// 3. 如果没有找到关联，尝试通过邮箱查找用户
 	if thirdPartyUser.Email != "" && user == nil {
-		user, err = s.userDao.FindByEmail(thirdPartyUser.Email)
+		user, err = dao.GetUserDao().FindByEmail(thirdPartyUser.Email)
 	}
 	if thirdPartyUser.Phone != "" && user == nil {
-		user, err = s.userDao.FindByPhone(thirdPartyUser.Phone)
+		user, err = dao.GetUserDao().FindByPhone(thirdPartyUser.Phone)
 	}
 	if user == nil {
 		// 4. 如果没有找到任何关联，创建新用户
@@ -196,9 +185,6 @@ func (s *userServiceImpl) handleAuthByThirdParty(ctx context.Context, req *v1.Lo
 }
 
 func (s *userServiceImpl) linkThirdPartyUser(ctx context.Context, userID uint, thirdPartyUser *model.ThirdPartyUser) error {
-	if s.thirdPartyUserDao == nil {
-		return errors.New("第三方用户仓库未初始化")
-	}
 	newMeta := &model.ThirdPartyUserMeta{
 		UserID:      userID,
 		Provider:    thirdPartyUser.Provider,
@@ -206,7 +192,7 @@ func (s *userServiceImpl) linkThirdPartyUser(ctx context.Context, userID uint, t
 		UnionID:     thirdPartyUser.UnionID,
 		AccessToken: thirdPartyUser.AccessToken,
 	}
-	_, err := s.thirdPartyUserDao.Create(newMeta)
+	_, err := dao.GetThirdPartyUserDao().Create(newMeta)
 	if err != nil {
 		return err
 	}
@@ -239,7 +225,7 @@ func (s *userServiceImpl) createUser(verifyType string, identifier string, passw
 	}
 	user.Nickname = user.Username
 	user.Password = string(hashedPassword)
-	user, err = s.userDao.Create(user)
+	user, err = dao.GetUserDao().Create(user)
 	if err != nil {
 		return nil, err
 	}
@@ -258,9 +244,11 @@ func (s *userServiceImpl) LoginRecord(ctx context.Context, req *model.LoginRecor
 		Status:            req.Status,
 		Device:            req.Device,
 	}
-	if s.loginHistoryDao != nil {
-		s.loginHistoryDao.Create(loginHistory)
+	_, err := dao.GetLoginHistoryDao().Create(loginHistory)
+	if err != nil {
+		// TODO 记录日志
 	}
+
 	s.markTrustedDevice(req.UserID, req.Device, req.DeviceFingerprint, req.IP, location)
 
 }
@@ -272,12 +260,12 @@ func (s *userServiceImpl) getLocationByIP(ctx context.Context, ip string) string
 
 // markTrustedDevice 标记信任设备
 func (s *userServiceImpl) markTrustedDevice(userID uint, deviceName, deviceFingerprint string, ip, location string) {
-	if s.trustedDeviceDao == nil || deviceFingerprint == "" {
+	if deviceFingerprint == "" {
 		return
 	}
 
 	// 查找是否已存在信任设备
-	device, err := s.trustedDeviceDao.FindByUserIDAndFingerprint(userID, deviceFingerprint)
+	device, err := dao.GetTrustedDeviceDao().FindByUserIDAndFingerprint(userID, deviceFingerprint)
 	if err != nil {
 		// 设备不存在，创建新的信任设备
 		newDevice := &model.TrustedDevice{
@@ -289,24 +277,30 @@ func (s *userServiceImpl) markTrustedDevice(userID uint, deviceName, deviceFinge
 			LastLoginTime:     time.Now(),
 			LastLoginLocation: location,
 		}
-		s.trustedDeviceDao.Create(newDevice)
+		_, err := dao.GetTrustedDeviceDao().Create(newDevice)
+		if err != nil {
+			// TODO 记录日志
+		}
 	} else {
 		// 设备已存在，更新最后登录时间和IP
 		device.LastLoginTime = time.Now()
 		device.LastLoginIP = ip
 		device.LastLoginLocation = location
-		s.trustedDeviceDao.Update(device)
+		_, err := dao.GetTrustedDeviceDao().Update(device)
+		if err != nil {
+			// TODO 记录日志
+		}
 	}
 }
 
 // detectTrustedDevice 检测设备是否已信任
 func (s *userServiceImpl) detectTrustedDevice(userID uint, deviceFingerprint string) bool {
-	if s.trustedDeviceDao == nil || deviceFingerprint == "" {
+	if deviceFingerprint == "" {
 		return false
 	}
 
 	// 查找是否已存在信任设备
-	_, err := s.trustedDeviceDao.FindByUserIDAndFingerprint(userID, deviceFingerprint)
+	_, err := dao.GetTrustedDeviceDao().FindByUserIDAndFingerprint(userID, deviceFingerprint)
 	if err != nil {
 		return false
 	}
@@ -325,7 +319,7 @@ func (s *userServiceImpl) checkPassword(user *model.User, password string) error
 // GetUserInfo 获取用户信息 todo 完善用户信息返回逻辑
 func (s *userServiceImpl) GetUserInfo(userID uint) (*model.User, error) {
 	// 查找用户
-	user, err := s.userDao.FindByID(userID)
+	user, err := dao.GetUserDao().FindByID(userID)
 	if err != nil {
 		return nil, errors.New("用户不存在")
 	}
@@ -337,7 +331,7 @@ func (s *userServiceImpl) GetUserInfo(userID uint) (*model.User, error) {
 // UpdateUserInfo 更新用户信息 todo 完善更新用户信息逻辑
 func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone string, avatar string) (*model.User, error) {
 	// 查找用户
-	user, err := s.userDao.FindByID(userID)
+	user, err := dao.GetUserDao().FindByID(userID)
 	if err != nil {
 		return nil, errors.New("用户不存在")
 	}
@@ -354,7 +348,7 @@ func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone str
 	}
 
 	// 保存更新
-	user, err = s.userDao.Update(user)
+	user, err = dao.GetUserDao().Update(user)
 	if err != nil {
 		return nil, errors.New("更新用户信息失败")
 	}
@@ -365,7 +359,7 @@ func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone str
 // ChangePassword 修改密码 todo 完善修改密码逻辑
 func (s *userServiceImpl) ChangePassword(userID uint, oldPassword string, newPassword string) error {
 	// 查找用户
-	user, err := s.userDao.FindByID(userID)
+	user, err := dao.GetUserDao().FindByID(userID)
 	if err != nil {
 		return errors.New("用户不存在")
 	}
@@ -386,7 +380,7 @@ func (s *userServiceImpl) ChangePassword(userID uint, oldPassword string, newPas
 	user.Password = string(hashedPassword)
 
 	// 保存更新
-	_, err = s.userDao.Update(user)
+	_, err = dao.GetUserDao().Update(user)
 	if err != nil {
 		return errors.New("更新密码失败")
 	}
@@ -408,11 +402,11 @@ func (s *userServiceImpl) Register(ctx context.Context, req *v1.RegisterRequest)
 	var existingUser *model.User
 	switch req.VerifyType {
 	case "USERNAME":
-		existingUser, err = s.userDao.FindByUsername(req.Identifier)
+		existingUser, err = dao.GetUserDao().FindByUsername(req.Identifier)
 	case "EMAIL":
-		existingUser, err = s.userDao.FindByEmail(req.Identifier)
+		existingUser, err = dao.GetUserDao().FindByEmail(req.Identifier)
 	case "PHONE":
-		existingUser, err = s.userDao.FindByPhone(req.Identifier)
+		existingUser, err = dao.GetUserDao().FindByPhone(req.Identifier)
 	default:
 		return nil, errors.New("无效的验证类型")
 	}
@@ -445,7 +439,7 @@ func (s *userServiceImpl) ResetPassword(email string, verifyCode string, newPass
 		return err
 	}
 
-	user, err := s.userDao.FindByEmail(email)
+	user, err := dao.GetUserDao().FindByEmail(email)
 	if err != nil {
 		return errors.New("用户不存在")
 	}
@@ -457,7 +451,7 @@ func (s *userServiceImpl) ResetPassword(email string, verifyCode string, newPass
 
 	user.Password = string(hashedPassword)
 
-	_, err = s.userDao.Update(user)
+	_, err = dao.GetUserDao().Update(user)
 	if err != nil {
 		return errors.New("重置密码失败")
 	}
@@ -469,7 +463,7 @@ func (s *userServiceImpl) ResetPassword(email string, verifyCode string, newPass
 func (s *userServiceImpl) SendResetPasswordCode(email string) error {
 	ctx := context.Background()
 
-	_, err := s.userDao.FindByEmail(email)
+	_, err := dao.GetUserDao().FindByEmail(email)
 	if err != nil {
 		return errors.New("用户不存在")
 	}

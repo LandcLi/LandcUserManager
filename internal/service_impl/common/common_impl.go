@@ -23,7 +23,7 @@ type commonServiceImpl struct {
 }
 
 // NewCommonService 创建通用服务实例
-func NewCommonService() service.CommonService {
+func NewCommonService() *commonServiceImpl {
 	return &commonServiceImpl{
 		config: config.GetConfig(),
 	}

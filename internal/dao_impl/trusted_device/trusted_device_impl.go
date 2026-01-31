@@ -9,8 +9,8 @@ import (
 )
 
 func init() {
-	if dao.GetTrustedDevice() == nil {
-		dao.RegisterTrustedDeviceImpl(NewTrustedDeviceImpl())
+	if dao.GetTrustedDeviceDao() == nil {
+		dao.RegisterTrustedDeviceDaoImpl(NewTrustedDeviceImpl())
 	}
 }
 
@@ -20,7 +20,7 @@ type trustedDeviceImpl struct {
 }
 
 // NewTrustedDeviceImpl 创建信任设备仓库实例
-func NewTrustedDeviceImpl() dao.TrustedDevice {
+func NewTrustedDeviceImpl() *trustedDeviceImpl {
 	return &trustedDeviceImpl{
 		orm: db.GetDB(),
 	}

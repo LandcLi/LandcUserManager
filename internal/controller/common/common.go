@@ -16,13 +16,10 @@ func init() {
 }
 
 type commonController struct {
-	CommonService service.CommonService
 }
 
 func NewCommonController() *commonController {
-	return &commonController{
-		CommonService: service.GetCommonService(),
-	}
+	return &commonController{}
 }
 
 func (cc *commonController) SendVerifyCode(ctx context.Context, req *v1.SendVerifyCodeRequest) (*v1.SendVerifyCodeResponse, error) {
@@ -31,7 +28,7 @@ func (cc *commonController) SendVerifyCode(ctx context.Context, req *v1.SendVeri
 		VerifyType: req.VerifyType,
 		Action:     req.Action,
 	}
-	err := cc.CommonService.SendVerifyCode(ctx, serviceReq)
+	err := service.GetCommonService().SendVerifyCode(ctx, serviceReq)
 	if err != nil {
 		return nil, err
 	}

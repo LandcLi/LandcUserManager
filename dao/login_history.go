@@ -5,19 +5,19 @@ import (
 )
 
 var (
-	loginHistoryDao LoginHistory
+	loginHistoryDaoImpl loginHistoryDao
 )
 
-func RegisterLoginHistoryImpl(impl LoginHistory) {
-	loginHistoryDao = impl
+func RegisterLoginHistoryDaoImpl(impl loginHistoryDao) {
+	loginHistoryDaoImpl = impl
 }
 
-func GetLoginHistory() LoginHistory {
-	return loginHistoryDao
+func GetLoginHistoryDao() loginHistoryDao {
+	return loginHistoryDaoImpl
 }
 
-// LoginHistory 登录历史仓库接口
-type LoginHistory interface {
+// loginHistoryDao 登录历史仓库接口
+type loginHistoryDao interface {
 	// Create 创建登录历史
 	Create(loginHistory *model.LoginHistory) (*model.LoginHistory, error)
 

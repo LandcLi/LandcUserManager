@@ -9,8 +9,8 @@ import (
 )
 
 func init() {
-	if dao.GetThirdPartyUser() == nil {
-		dao.RegisterThirdPartyUserImpl(NewThirdPartyUserImpl())
+	if dao.GetThirdPartyUserDao() == nil {
+		dao.RegisterThirdPartyUserDaoImpl(NewThirdPartyUserImpl())
 	}
 }
 
@@ -20,7 +20,7 @@ type thirdPartyUserImpl struct {
 }
 
 // NewThirdPartyUserImpl 创建第三方用户仓库实例
-func NewThirdPartyUserImpl() dao.ThirdPartyUser {
+func NewThirdPartyUserImpl() *thirdPartyUserImpl {
 	return &thirdPartyUserImpl{
 		orm: db.GetDB(),
 	}
