@@ -36,10 +36,13 @@ type Config struct {
 
 // ServerConfig 服务器配置
 type ServerConfig struct {
-	Port         int    `yaml:"port"`
-	Host         string `yaml:"host"`
-	ReadTimeout  int    `yaml:"read_timeout"`
-	WriteTimeout int    `yaml:"write_timeout"`
+	Port             int    `yaml:"port"`
+	Host             string `yaml:"host"`
+	ReadTimeout      int    `yaml:"read_timeout"`
+	WriteTimeout     int    `yaml:"write_timeout"`
+	GinMode          string `yaml:"gin_mode"`
+	EnableCORS       bool   `yaml:"enable_cors"`
+	UserDefaultRoute bool   `yaml:"user_default_route"`
 }
 
 // DatabaseConfig 数据库配置

@@ -12,8 +12,15 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+var globalDB *gorm.DB
+var globalRedis *redis.Client
+
 // InitDatabase 初始化数据库连接
 func InitDatabase(config *config.DatabaseConfig) *gorm.DB {
+	if globalDB != nil {
+		return globalDB
+	}
+
 	// 配置GORM
 	gormConfig := &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
@@ -36,11 +43,18 @@ func InitDatabase(config *config.DatabaseConfig) *gorm.DB {
 	sqlDB.SetMaxOpenConns(config.MaxOpenConns)
 	sqlDB.SetConnMaxLifetime(time.Duration(config.ConnMaxLifetime) * time.Second)
 
+	// 赋值给全局变量
+	globalDB = db
+
 	return db
 }
 
 // InitRedis 初始化Redis连接
 func InitRedis(config *config.RedisConfig) (*redis.Client, error) {
+	if globalRedis != nil {
+		return globalRedis, nil
+	}
+
 	// 创建Redis客户端
 	client := redis.NewClient(&redis.Options{
 		Addr:     config.Addr,
@@ -57,21 +71,40 @@ func InitRedis(config *config.RedisConfig) (*redis.Client, error) {
 		return nil, fmt.Errorf("连接Redis失败: %v", err)
 	}
 
+	// 赋值给全局变量
+	globalRedis = client
+
 	return client, nil
+}
+
+// InitDatabaseWithDB 直接传入db客户端
+func InitDatabaseWithDB(db *gorm.DB) {
+	globalDB = db
+}
+
+// InitRedisWithClient 直接传入redis客户端
+func InitRedisWithClient(redisClient *redis.Client) {
+	globalRedis = redisClient
 }
 
 // GetDB 获取数据库连接
 func GetDB() *gorm.DB {
-	config := config.GetConfig()
-	return InitDatabase(&config.Database)
+	if globalDB == nil {
+		config := config.GetConfig()
+		globalDB = InitDatabase(&config.Database)
+	}
+	return globalDB
 }
 
 // GetRedis 获取Redis连接
 func GetRedis() *redis.Client {
-	config := config.GetConfig()
-	client, err := InitRedis(&config.Redis)
-	if err != nil {
-		return nil
+	if globalRedis == nil {
+		config := config.GetConfig()
+		client, err := InitRedis(&config.Redis)
+		if err != nil {
+			return nil
+		}
+		globalRedis = client
 	}
-	return client
+	return globalRedis
 }

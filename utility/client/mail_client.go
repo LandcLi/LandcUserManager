@@ -13,6 +13,9 @@ type EmailConfig struct {
 var mailClient *mail.Client
 
 func InitMailClientByConfig(config *mail.Config) {
+	if mailClient != nil {
+		return
+	}
 	mailClient = mail.NewClientWithConfig(config)
 }
 func InitMailClientBySet(client *mail.Client) {
