@@ -25,7 +25,7 @@ type alipayAdapter struct {
 	config *alipayConfig
 }
 
-func (a *alipayAdapter) FetchUserInfo(ctx context.Context, AccessToken, VerifyCode string) (*model.ThirdPartyUser, error) {
+func (a *alipayAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCode string) (*model.ThirdPartyUser, error) {
 	// 实现支付宝用户信息拉取逻辑（使用config中的参数）
 	// 1. 使用access_token获取用户信息
 	userInfoURL := "https://openapi.alipay.com/gateway.do"
@@ -39,7 +39,7 @@ func (a *alipayAdapter) FetchUserInfo(ctx context.Context, AccessToken, VerifyCo
 		"sign_type":  "RSA2",
 		"timestamp":  time.Now().Format("2006-01-02 15:04:05"),
 		"version":    "1.0",
-		"auth_token": AccessToken,
+		"auth_token": accessToken,
 	}
 
 	// TODO: 这里需要添加签名逻辑

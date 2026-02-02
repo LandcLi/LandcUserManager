@@ -23,11 +23,11 @@ type wechatAdapter struct {
 	config *wechatConfig
 }
 
-func (a *wechatAdapter) FetchUserInfo(ctx context.Context, AccessToken, VerifyCode string) (*model.ThirdPartyUser, error) {
+func (a *wechatAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCode string) (*model.ThirdPartyUser, error) {
 	// 实现微信用户信息拉取逻辑（使用config中的参数）
 	// 2. 使用access_token获取用户信息
 	userInfoURL := "https://api.weixin.qq.com/sns/userinfo"
-	userInfoParams := fmt.Sprintf("access_token=%s&openid=%s", AccessToken, VerifyCode)
+	userInfoParams := fmt.Sprintf("access_token=%s&openid=%s", accessToken, verifyCode)
 
 	userInfoResp, err := http.Get(userInfoURL + "?" + userInfoParams)
 	if err != nil {

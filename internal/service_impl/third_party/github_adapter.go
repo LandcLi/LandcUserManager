@@ -23,7 +23,7 @@ type githubAdapter struct {
 	config *githubConfig
 }
 
-func (a *githubAdapter) FetchUserInfo(ctx context.Context, AccessToken, VerifyCode string) (*model.ThirdPartyUser, error) {
+func (a *githubAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCode string) (*model.ThirdPartyUser, error) {
 	// 实现GitHub用户信息拉取逻辑（使用config中的参数）
 	client := &http.Client{}
 	// 2. 使用access_token获取用户信息
@@ -37,7 +37,7 @@ func (a *githubAdapter) FetchUserInfo(ctx context.Context, AccessToken, VerifyCo
 	}
 
 	// 设置请求头
-	userInfoReq.Header.Set("Authorization", "Bearer "+AccessToken)
+	userInfoReq.Header.Set("Authorization", "Bearer "+accessToken)
 	userInfoReq.Header.Set("Accept", "application/vnd.github.v3+json")
 
 	// 发送请求
@@ -74,7 +74,7 @@ func (a *githubAdapter) FetchUserInfo(ctx context.Context, AccessToken, VerifyCo
 		emailsURL := "https://api.github.com/user/emails"
 		emailsReq, err := http.NewRequest("GET", emailsURL, nil)
 		if err == nil {
-			emailsReq.Header.Set("Authorization", "Bearer "+AccessToken)
+			emailsReq.Header.Set("Authorization", "Bearer "+accessToken)
 			emailsReq.Header.Set("Accept", "application/vnd.github.v3+json")
 
 			emailsResp, err := client.Do(emailsReq)

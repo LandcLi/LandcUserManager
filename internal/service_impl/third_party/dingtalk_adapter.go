@@ -24,14 +24,14 @@ type dingtalkAdapter struct {
 	config *dingtalkConfig
 }
 
-func (a *dingtalkAdapter) FetchUserInfo(ctx context.Context, AccessToken, VerifyCode string) (*model.ThirdPartyUser, error) {
+func (a *dingtalkAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCode string) (*model.ThirdPartyUser, error) {
 	// 实现钉钉用户信息拉取逻辑（使用config中的参数）
 	// 2. 使用access_token和code获取用户信息
 	userInfoURL := "https://oapi.dingtalk.com/sns/getuserinfo_bycode"
 
 	// 构建请求体
 	reqBody := map[string]string{
-		"tmp_auth_code": VerifyCode,
+		"tmp_auth_code": verifyCode,
 	}
 	reqJSON, err := json.Marshal(reqBody)
 	if err != nil {
@@ -48,7 +48,7 @@ func (a *dingtalkAdapter) FetchUserInfo(ctx context.Context, AccessToken, Verify
 
 	// 设置请求头
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-acs-dingtalk-access-token", AccessToken)
+	req.Header.Set("x-acs-dingtalk-access-token", accessToken)
 
 	// 发送请求
 	client := &http.Client{Timeout: 10 * time.Second}

@@ -12,7 +12,7 @@ import (
 // -------------------------- 对外暴露的核心接口 --------------------------
 // ThirdPartyAdapter 第三方适配器核心接口（用户自定义适配器需实现此接口）
 type ThirdPartyAdapter interface {
-	FetchUserInfo(ctx context.Context, AccessToken, VerifyCode string) (*model.ThirdPartyUser, error)
+	FetchUserInfo(ctx context.Context, accessToken, verifyCode string) (*model.ThirdPartyUser, error)
 }
 
 // AdapterFactory 适配器工厂接口（屏蔽不同Config的创建逻辑）
