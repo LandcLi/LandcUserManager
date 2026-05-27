@@ -33,10 +33,13 @@
 
 ## 技术栈
 
+- **框架**: landc-go/mvc（DI / Gateway / Web）
 - **Web框架**: Gin
 - **数据库**: MySQL (GORM)
 - **缓存**: Redis
-- **日志**: LandcLogFace
+- **日志**: landc-go/log
+- **API规范**: landc-go/api
+- **工具集**: landc-go/tools
 - **配置管理**: YAML
 - **加密**: bcrypt, crypto
 
@@ -193,15 +196,9 @@ func main() {
 }
 ```
 
-## 使用SDK
+## 使用SDK（远程调用模式）
 
-### 安装SDK
-
-```bash
-go get github.com/LandcLi/LandcUserManager/sdk
-```
-
-### 基本使用
+当 LandcUserManager 独立部署时，其他服务通过 SDK 远程访问：
 
 ```go
 package main
@@ -209,17 +206,22 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/LandcLi/LandcUserManager/sdk"
+	"github.com/LandcLi/LandcUserManager/api/user"
 	"github.com/LandcLi/LandcUserManager/api/user/v1"
+	"github.com/LandcLi/LandcUserManager/sdk"
 )
 
 func main() {
-	// 创建SDK实例
-	sdkClient := sdk.NewSDK("http://localhost:8080")
+	// 创建远程 Controller（基于 landc-go/mvc Gateway 模式）
+	remote := sdk.NewRemoteUserController("http://localhost:8080")
 
-	// 用户登录
+	// 注册为远程实现（替代本地实现）
+	user.UserGateway.Override(remote)
+
+	// 使用方式与本地完全一致
+	ctrl := user.GetUserController()
 	ctx := context.Background()
-	loginReq := &v1.LoginRequest{
+	resp, err := ctrl.Login(ctx, &v1.LoginRequest{
 		Identifier:        "user@example.com",
 		AuthCode:          "123456",
 		VerifyType:        "EMAIL",
@@ -227,30 +229,28 @@ func main() {
 		IP:                "127.0.0.1",
 		DeviceFingerprint: "device123",
 		UserAgent:         "Mozilla/5.0",
-	}
-
-	loginResp, err := sdkClient.User.Login(ctx, loginReq)
+	})
 	if err != nil {
 		fmt.Printf("登录失败: %v\n", err)
 		return
 	}
-
-	fmt.Printf("登录成功，用户ID: %d\n", loginResp.UserID)
+	fmt.Printf("登录成功，用户ID: %d\n", resp.UserID)
 }
 ```
 
-### 自定义路由和Header
+### 本地/远程切换
+
+本项目基于 `landc-go/mvc` 的 **Gateway 模式**，只需在 `main.go` 中修改注册方式即可切换：
 
 ```go
-// 使用自定义path和header
-customCtx := context.WithValue(context.Background(), "path", "/api/custom/login")
-customCtx = context.WithValue(customCtx, "headers", map[string]string{
-	"Authorization": "Bearer token123",
-	"X-Custom-Header": "custom-value",
-})
+// 本地模式（默认，通过 init() 自动注册）
+landcusermanager.InitLUMWithConfigAndGin(cfg, ginEngine)
 
-loginResp, err := sdkClient.User.Login(customCtx, loginReq)
+// 远程模式（替换为 SDK 远程调用）
+user.UserGateway.Override(sdk.NewRemoteUserController("http://user-service:8081"))
 ```
+
+业务代码（如 SSO 的 auth controller）**完全不需要修改**。
 
 ## API接口
 
