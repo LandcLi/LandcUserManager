@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/LandcLi/LandcUserManager/utility/logger"
-	"github.com/LandcLi/landc-go/api/middleware"
+	apiMiddleware "github.com/LandcLi/landc-go/api/middleware/gin"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,7 +28,7 @@ func Cors() gin.HandlerFunc {
 
 // GinMiddleware LandcCommonApi中间件
 func GinMiddleware() gin.HandlerFunc {
-	return middleware.GinMiddleware()
+	return apiMiddleware.GinMiddleware()
 }
 
 // RequestLogger 请求日志中间件
