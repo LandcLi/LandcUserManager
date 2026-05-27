@@ -12,6 +12,7 @@ import (
 	"github.com/LandcLi/LandcUserManager/utility/config"
 	"github.com/LandcLi/LandcUserManager/utility/db"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 	"github.com/LandcLi/landc-go/tools/generate"
 	"github.com/LandcLi/landc-go/tools/mail"
 	"github.com/go-redis/redis/v8"
@@ -30,9 +31,7 @@ func NewCommonService() *commonServiceImpl {
 }
 
 func init() {
-	if service.GetCommonService() == nil {
-		service.RegisterCommonService(NewCommonService())
-	}
+	di.Provide[service.CommonService]("common.service", NewCommonService())
 }
 
 // SendVerifyCode 发送验证码

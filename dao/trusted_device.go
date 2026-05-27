@@ -2,40 +2,37 @@ package dao
 
 import (
 	"github.com/LandcLi/LandcUserManager/model"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 )
 
-var (
-	trustedDeviceDaoImpl trustedDeviceDao
-)
-
-func RegisterTrustedDeviceDaoImpl(impl trustedDeviceDao) {
-	trustedDeviceDaoImpl = impl
-}
-
-func GetTrustedDeviceDao() trustedDeviceDao {
-	return trustedDeviceDaoImpl
-}
-
-// trustedDeviceDao 信任设备仓库接口
-type trustedDeviceDao interface {
-	// Create 创建信任设备
+// TrustedDeviceDao defines the trusted device data access interface.
+type TrustedDeviceDao interface {
+	// Create creates a trusted device
 	Create(trustedDevice *model.TrustedDevice) (*model.TrustedDevice, error)
 
-	// FindByID 根据ID查找信任设备
+	// FindByID finds by ID
 	FindByID(id uint) (*model.TrustedDevice, error)
 
-	// FindByUserIDAndFingerprint 根据用户ID和设备指纹查找信任设备
+	// FindByUserIDAndFingerprint finds by user ID and device fingerprint
 	FindByUserIDAndFingerprint(userID uint, deviceFingerprint string) (*model.TrustedDevice, error)
 
-	// FindByUserID 根据用户ID查找信任设备列表
+	// FindByUserID finds by user ID
 	FindByUserID(userID uint) ([]*model.TrustedDevice, error)
 
-	// Update 更新信任设备
+	// Update updates a trusted device
 	Update(trustedDevice *model.TrustedDevice) (*model.TrustedDevice, error)
 
-	// Delete 删除信任设备
+	// Delete deletes a trusted device
 	Delete(id uint) error
 
-	// DeleteByUserID 根据用户ID删除信任设备
+	// DeleteByUserID deletes by user ID
 	DeleteByUserID(userID uint) error
+}
+
+func RegisterTrustedDeviceDao(impl TrustedDeviceDao) {
+	di.Provide[TrustedDeviceDao]("trustedDevice.dao", impl)
+}
+
+func GetTrustedDeviceDao() TrustedDeviceDao {
+	return di.Require[TrustedDeviceDao]("trustedDevice.dao")
 }

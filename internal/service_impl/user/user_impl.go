@@ -8,6 +8,7 @@ import (
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
 	"github.com/LandcLi/LandcUserManager/dao"
 	"github.com/LandcLi/LandcUserManager/service"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 	"github.com/LandcLi/landc-go/tools/generate"
 
 	"github.com/LandcLi/LandcUserManager/model"
@@ -17,9 +18,7 @@ import (
 )
 
 func init() {
-	if service.GetUserService() == nil {
-		service.RegisterUserService(NewUserServiceImpl())
-	}
+	di.Provide[service.UserService]("user.service", NewUserServiceImpl())
 }
 
 // TODO 扫码登录、生物登录

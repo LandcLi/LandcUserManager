@@ -6,14 +6,13 @@ import (
 	"github.com/LandcLi/LandcUserManager/dao"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/utility/db"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 
 	"gorm.io/gorm"
 )
 
 func init() {
-	if dao.GetLoginHistoryDao() == nil {
-		dao.RegisterLoginHistoryDaoImpl(NewLoginHistoryImpl())
-	}
+	di.Provide[dao.LoginHistoryDao]("loginHistory.dao", NewLoginHistoryImpl())
 }
 
 // loginHistoryImpl 登录历史仓库实现

@@ -9,15 +9,14 @@ import (
 	"github.com/LandcLi/LandcUserManager/dao"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/utility/db"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 )
 
 func init() {
-	if dao.GetUserDao() == nil {
-		dao.RegisterUserDapImpl(NewUserImpl())
-	}
+	di.Provide[dao.UserDao]("user.dao", NewUserImpl())
 }
 
 // userImpl 用户仓库实现

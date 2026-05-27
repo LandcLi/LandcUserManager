@@ -2,36 +2,30 @@ package common
 
 import (
 	"context"
-	"net/http"
 
 	v1 "github.com/LandcLi/LandcUserManager/api/common/v1"
-	"github.com/gin-gonic/gin"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 )
 
-var controller commonApi
-
-type commonApi interface {
+// CommonController defines the common operations interface.
+type CommonController interface {
 	SendVerifyCode(ctx context.Context, req *v1.SendVerifyCodeRequest) (*v1.SendVerifyCodeResponse, error)
 }
 
-func RegisterCommonController(impl commonApi) {
-	controller = impl
+// CommonRoutes maps controller methods to HTTP endpoints.
+var CommonRoutes = di.Routes{
+	"SendVerifyCode": {Method: "POST", Path: "/api/common/send-verify-code"},
 }
 
-func GetCommonController() commonApi {
-	return controller
+// CommonGateway is the service gateway for common operations.
+var CommonGateway = di.NewGateway[CommonController]("common.controller", CommonRoutes)
+
+// GetCommonController returns the registered CommonController implementation.
+func GetCommonController() CommonController {
+	return CommonGateway.Get()
 }
 
-func SendVerifyCode(c *gin.Context) {
-	var req v1.SendVerifyCodeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := controller.SendVerifyCode(c.Request.Context(), &req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, resp)
+// RegisterCommonController registers a CommonController implementation.
+func RegisterCommonController(impl CommonController) {
+	CommonGateway.Provide(impl)
 }

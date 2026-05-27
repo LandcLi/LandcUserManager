@@ -7,12 +7,11 @@ import (
 	v1 "github.com/LandcLi/LandcUserManager/api/common/v1"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/service"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 )
 
 func init() {
-	if commonApi.GetCommonController() == nil {
-		commonApi.RegisterCommonController(NewCommonController())
-	}
+	di.Provide[commonApi.CommonController]("common.controller", NewCommonController())
 }
 
 type commonController struct {

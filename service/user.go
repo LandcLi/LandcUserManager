@@ -5,44 +5,41 @@ import (
 
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
 	"github.com/LandcLi/LandcUserManager/model"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 )
 
-var (
-	userServiceImpl userService
-)
-
-func RegisterUserService(impl userService) {
-	userServiceImpl = impl
-}
-
-func GetUserService() userService {
-	return userServiceImpl
-}
-
-// TODO 扫码登录、生物登录
-// userService 认证服务
-type userService interface {
-	// Login 密码验证
+// UserService defines the user business logic interface.
+// Users can implement this interface and register via di.Override to customize behavior.
+type UserService interface {
+	// Login validates credentials
 	Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error)
 
-	// Register 用户注册
+	// Register creates a new user
 	Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error)
 
-	// LoginRecord 登录审计，记录登录历史和更新信任设备，由SSO回调
+	// LoginRecord records login history and updates trusted devices
 	LoginRecord(ctx context.Context, req *model.LoginRecordRequest)
 
-	// GetUserInfo 获取用户信息
+	// GetUserInfo retrieves user information
 	GetUserInfo(userID uint) (*model.User, error)
 
-	// UpdateUserInfo 更新用户信息
+	// UpdateUserInfo updates user information
 	UpdateUserInfo(userID uint, nickname string, phone string, avatar string) (*model.User, error)
 
-	// ChangePassword 修改密码
+	// ChangePassword changes user password
 	ChangePassword(userID uint, oldPassword string, newPassword string) error
 
-	// ResetPassword 重置密码
+	// ResetPassword resets user password
 	ResetPassword(email string, verifyCode string, newPassword string) error
 
-	// SendResetPasswordCode 发送重置密码验证码
+	// SendResetPasswordCode sends reset password verification code
 	SendResetPasswordCode(email string) error
+}
+
+func RegisterUserService(impl UserService) {
+	di.Provide[UserService]("user.service", impl)
+}
+
+func GetUserService() UserService {
+	return di.Require[UserService]("user.service")
 }

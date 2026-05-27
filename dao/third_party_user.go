@@ -2,43 +2,40 @@ package dao
 
 import (
 	"github.com/LandcLi/LandcUserManager/model"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 )
 
-var (
-	thirdPartyUserDaoImpl thirdPartyUserDao
-)
-
-func RegisterThirdPartyUserDaoImpl(impl thirdPartyUserDao) {
-	thirdPartyUserDaoImpl = impl
-}
-
-func GetThirdPartyUserDao() thirdPartyUserDao {
-	return thirdPartyUserDaoImpl
-}
-
-// thirdPartyUserDao 第三方用户仓库接口
-type thirdPartyUserDao interface {
-	// Create 创建第三方用户关联
+// ThirdPartyUserDao defines the third-party user data access interface.
+type ThirdPartyUserDao interface {
+	// Create creates a third-party user association
 	Create(thirdPartyUserMeta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error)
 
-	// FindByID 根据ID查找第三方用户关联
+	// FindByID finds by ID
 	FindByID(id uint) (*model.ThirdPartyUserMeta, error)
 
-	// FindByOpenIDAndProvider 根据OpenID和提供商查找第三方用户关联
+	// FindByOpenIDAndProvider finds by OpenID and provider
 	FindByOpenIDAndProvider(openID string, provider string) (*model.ThirdPartyUserMeta, error)
 
-	// FindByUnionID 根据UnionID查找第三方用户关联
+	// FindByUnionID finds by UnionID
 	FindByUnionID(unionID string) (*model.ThirdPartyUserMeta, error)
 
-	// FindByUserID 根据用户ID查找第三方用户关联列表
+	// FindByUserID finds by user ID
 	FindByUserID(userID uint) ([]*model.ThirdPartyUserMeta, error)
 
-	// Update 更新第三方用户关联
+	// Update updates a third-party user association
 	Update(thirdPartyUserMeta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error)
 
-	// Delete 删除第三方用户关联
+	// Delete deletes a third-party user association
 	Delete(id uint) error
 
-	// DeleteByUserID 根据用户ID删除第三方用户关联
+	// DeleteByUserID deletes by user ID
 	DeleteByUserID(userID uint) error
+}
+
+func RegisterThirdPartyUserDao(impl ThirdPartyUserDao) {
+	di.Provide[ThirdPartyUserDao]("thirdPartyUser.dao", impl)
+}
+
+func GetThirdPartyUserDao() ThirdPartyUserDao {
+	return di.Require[ThirdPartyUserDao]("thirdPartyUser.dao")
 }

@@ -11,13 +11,10 @@ func RegisterDefaultRoutes(r *gin.Engine) {
 	// Health check
 	r.GET("/health", HealthCheck)
 
-	// Register common routes
-	commonGroup := r.Group("/api/common")
-	{
-		commonGroup.POST("/send-verify-code", common.SendVerifyCode)
-	}
+	// Register common routes via Gateway
+	common.CommonGateway.RegisterRoutes(r)
 
-	// Register user routes via Gateway (auto-generates Gin handlers from UserController interface)
+	// Register user routes via Gateway
 	user.UserGateway.RegisterRoutes(r)
 }
 

@@ -2,37 +2,34 @@ package dao
 
 import (
 	"github.com/LandcLi/LandcUserManager/model"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 )
 
-var (
-	loginHistoryDaoImpl loginHistoryDao
-)
-
-func RegisterLoginHistoryDaoImpl(impl loginHistoryDao) {
-	loginHistoryDaoImpl = impl
-}
-
-func GetLoginHistoryDao() loginHistoryDao {
-	return loginHistoryDaoImpl
-}
-
-// loginHistoryDao 登录历史仓库接口
-type loginHistoryDao interface {
-	// Create 创建登录历史
+// LoginHistoryDao defines the login history data access interface.
+type LoginHistoryDao interface {
+	// Create creates a login history record
 	Create(loginHistory *model.LoginHistory) (*model.LoginHistory, error)
 
-	// FindByID 根据ID查找登录历史
+	// FindByID finds by ID
 	FindByID(id uint) (*model.LoginHistory, error)
 
-	// FindByUserID 根据用户ID查找登录历史
+	// FindByUserID finds by user ID with pagination
 	FindByUserID(userID uint, page, pageSize int) ([]*model.LoginHistory, int64, error)
 
-	// Delete 删除登录历史
+	// Delete deletes a login history record
 	Delete(id uint) error
 
-	// DeleteByUserID 根据用户ID删除登录历史
+	// DeleteByUserID deletes by user ID
 	DeleteByUserID(userID uint) error
 
-	// DeleteOldRecords 删除旧记录
+	// DeleteOldRecords deletes records older than specified days
 	DeleteOldRecords(days int) error
+}
+
+func RegisterLoginHistoryDao(impl LoginHistoryDao) {
+	di.Provide[LoginHistoryDao]("loginHistory.dao", impl)
+}
+
+func GetLoginHistoryDao() LoginHistoryDao {
+	return di.Require[LoginHistoryDao]("loginHistory.dao")
 }

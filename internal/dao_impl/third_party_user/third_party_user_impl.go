@@ -4,14 +4,13 @@ import (
 	"github.com/LandcLi/LandcUserManager/dao"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/utility/db"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 
 	"gorm.io/gorm"
 )
 
 func init() {
-	if dao.GetThirdPartyUserDao() == nil {
-		dao.RegisterThirdPartyUserDaoImpl(NewThirdPartyUserImpl())
-	}
+	di.Provide[dao.ThirdPartyUserDao]("thirdPartyUser.dao", NewThirdPartyUserImpl())
 }
 
 // thirdPartyUserImpl 第三方用户仓库实现

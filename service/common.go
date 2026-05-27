@@ -4,25 +4,22 @@ import (
 	"context"
 
 	"github.com/LandcLi/LandcUserManager/model"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 )
 
-var (
-	commonServiceImpl commonService
-)
-
-func RegisterCommonService(impl commonService) {
-	commonServiceImpl = impl
-}
-
-func GetCommonService() commonService {
-	return commonServiceImpl
-}
-
-// commonService 通用服务
-type commonService interface {
-	// SendVerifyCode 发送验证码
+// CommonService defines common operations interface.
+type CommonService interface {
+	// SendVerifyCode sends verification code
 	SendVerifyCode(ctx context.Context, req *model.SendVerifyCodeRequest) error
 
-	// CheckVerifyCode 验证验证码
+	// CheckVerifyCode validates verification code
 	CheckVerifyCode(ctx context.Context, identifier string, verifyType string, verifyCode string, action string) error
+}
+
+func RegisterCommonService(impl CommonService) {
+	di.Provide[CommonService]("common.service", impl)
+}
+
+func GetCommonService() CommonService {
+	return di.Require[CommonService]("common.service")
 }

@@ -2,55 +2,52 @@ package dao
 
 import (
 	"github.com/LandcLi/LandcUserManager/model"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 )
 
-var (
-	userDaoImpl userDao
-)
-
-func RegisterUserDapImpl(impl userDao) {
-	userDaoImpl = impl
-}
-
-func GetUserDao() userDao {
-	return userDaoImpl
-}
-
-// userDao 用户仓库接口
-type userDao interface {
-	// Create 创建用户
+// UserDao defines the user data access interface.
+type UserDao interface {
+	// Create creates a user
 	Create(user *model.User) (*model.User, error)
 
-	// FindByID 根据ID查找用户
+	// FindByID finds user by ID
 	FindByID(id uint) (*model.User, error)
 
-	// FindByUsername 根据用户名查找用户
+	// FindByUsername finds user by username
 	FindByUsername(username string) (*model.User, error)
 
-	// FindByUsernameFromDB 根据用户名从数据库直接查找用户，跳过缓存
+	// FindByUsernameFromDB finds user by username directly from DB, skipping cache
 	FindByUsernameFromDB(username string) (*model.User, error)
 
-	// FindByEmailFromDB 根据邮箱从数据库直接查找用户，跳过缓存
+	// FindByEmailFromDB finds user by email directly from DB, skipping cache
 	FindByEmailFromDB(email string) (*model.User, error)
 
-	// FindByPhoneFromDB 根据手机号从数据库直接查找用户，跳过缓存
+	// FindByPhoneFromDB finds user by phone directly from DB, skipping cache
 	FindByPhoneFromDB(phone string) (*model.User, error)
 
-	// FindByEmail 根据邮箱查找用户
+	// FindByEmail finds user by email
 	FindByEmail(email string) (*model.User, error)
 
-	// FindByPhone 根据手机号查找用户
+	// FindByPhone finds user by phone
 	FindByPhone(phone string) (*model.User, error)
 
-	// Update 更新用户
+	// Update updates a user
 	Update(user *model.User) (*model.User, error)
 
-	// Delete 删除用户
+	// Delete deletes a user
 	Delete(id uint) error
 
-	// ClearUserCache 清除用户缓存
+	// ClearUserCache clears user cache
 	ClearUserCache(user *model.User) error
 
-	// List 获取用户列表
+	// List gets user list
 	List(page, pageSize int) ([]*model.User, int64, error)
+}
+
+func RegisterUserDao(impl UserDao) {
+	di.Provide[UserDao]("user.dao", impl)
+}
+
+func GetUserDao() UserDao {
+	return di.Require[UserDao]("user.dao")
 }

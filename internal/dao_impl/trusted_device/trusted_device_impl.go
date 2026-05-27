@@ -4,14 +4,13 @@ import (
 	"github.com/LandcLi/LandcUserManager/dao"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/utility/db"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 
 	"gorm.io/gorm"
 )
 
 func init() {
-	if dao.GetTrustedDeviceDao() == nil {
-		dao.RegisterTrustedDeviceDaoImpl(NewTrustedDeviceImpl())
-	}
+	di.Provide[dao.TrustedDeviceDao]("trustedDevice.dao", NewTrustedDeviceImpl())
 }
 
 // trustedDeviceImpl 信任设备仓库实现
