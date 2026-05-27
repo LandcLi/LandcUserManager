@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/LandcLi/LandcLogFace"
 	"github.com/LandcLi/LandcUserManager/utility/client"
+	"github.com/LandcLi/landc-go/log/facade"
 	"gopkg.in/yaml.v2"
 )
 
@@ -24,7 +24,7 @@ type Config struct {
 	JWT          JWTConfig              `yaml:"jwt"`
 	Email        client.EmailConfig     `yaml:"email"`
 	SMS          SMSConfig              `yaml:"sms"`
-	Log          LandcLogFace.LogConfig `yaml:"logger"`
+	Log          facade.LogConfig       `yaml:"logger"`
 	Cache        CacheConfig            `yaml:"cache"`
 	Password     PasswordConfig         `yaml:"password"`
 	VerifyCode   VerifyCodeConfig       `yaml:"verify_code"`

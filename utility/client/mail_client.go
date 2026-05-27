@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/LandcLi/LandcGoTools/mail"
+	"github.com/LandcLi/landc-go/tools/mail"
 )
 
 // EmailConfig 邮件配置

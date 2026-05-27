@@ -3,9 +3,9 @@ module github.com/LandcLi/LandcUserManager
 go 1.24.0
 
 require (
-	github.com/LandcLi/LandcCommonApi v0.0.0-20260116152221-0779acd06034
-	github.com/LandcLi/LandcGoTools v0.0.0-20260129142318-a705be4bcc86
-	github.com/LandcLi/LandcLogFace v0.0.0-20260128153627-e6b3f81a9aa0
+	github.com/LandcLi/landc-go/api v0.0.0
+	github.com/LandcLi/landc-go/log v0.0.0
+	github.com/LandcLi/landc-go/tools v0.0.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-redis/redis/v8 v8.11.5
 	golang.org/x/crypto v0.47.0
@@ -68,4 +68,10 @@ require (
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+)
+
+replace (
+	github.com/LandcLi/landc-go/api => ../landc-go/api
+	github.com/LandcLi/landc-go/log => ../landc-go/log
+	github.com/LandcLi/landc-go/tools => ../landc-go/tools
 )

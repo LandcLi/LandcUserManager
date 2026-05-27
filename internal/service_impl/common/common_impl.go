@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/LandcLi/LandcGoTools/generate"
-	"github.com/LandcLi/LandcGoTools/mail"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/service"
 	"github.com/LandcLi/LandcUserManager/utility/client"
 	"github.com/LandcLi/LandcUserManager/utility/config"
 	"github.com/LandcLi/LandcUserManager/utility/db"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
+	"github.com/LandcLi/landc-go/tools/generate"
+	"github.com/LandcLi/landc-go/tools/mail"
 	"github.com/go-redis/redis/v8"
 )
 

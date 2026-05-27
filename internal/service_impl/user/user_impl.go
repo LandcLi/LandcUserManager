@@ -5,10 +5,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/LandcLi/LandcGoTools/generate"
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
 	"github.com/LandcLi/LandcUserManager/dao"
 	"github.com/LandcLi/LandcUserManager/service"
+	"github.com/LandcLi/landc-go/tools/generate"
 
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/utility/config"

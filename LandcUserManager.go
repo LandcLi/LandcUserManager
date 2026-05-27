@@ -1,14 +1,14 @@
 package landcusermanager
 
 import (
-	"github.com/LandcLi/LandcCommonApi/middleware"
-	ginLogger "github.com/LandcLi/LandcLogFace/adapter/gin"
 	"github.com/LandcLi/LandcUserManager/api"
 	_ "github.com/LandcLi/LandcUserManager/internal"
 	"github.com/LandcLi/LandcUserManager/utility/client"
 	"github.com/LandcLi/LandcUserManager/utility/config"
 	"github.com/LandcLi/LandcUserManager/utility/db"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
+	"github.com/LandcLi/landc-go/api/middleware"
+	ginLogger "github.com/LandcLi/landc-go/log/adapter/gin"
 	"github.com/gin-gonic/gin"
 )
 

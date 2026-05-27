@@ -3,23 +3,23 @@ package logger
 import (
 	"context"
 
-	"github.com/LandcLi/LandcLogFace"
+	"github.com/LandcLi/landc-go/log/facade"
 )
 
-var globalLogger LandcLogFace.Logger
+var globalLogger facade.Logger
 
-func InitLogger(config *LandcLogFace.LogConfig) {
+func InitLogger(config *facade.LogConfig) {
 	if globalLogger == nil {
-		globalLogger = LandcLogFace.GetLoggerWithLogConfig(config)
+		globalLogger = facade.GetLoggerWithLogConfig(config)
 		globalLogger.Info("使用LogConfig的日志")
 	}
 }
 
-func InitLoggerWithLogger(logger LandcLogFace.Logger) {
+func InitLoggerWithLogger(logger facade.Logger) {
 	globalLogger = logger
 }
 
-func GetLogger() LandcLogFace.Logger {
+func GetLogger() facade.Logger {
 	return globalLogger
 }
 func Debug(ctx context.Context, msg string) {
