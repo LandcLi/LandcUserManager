@@ -7,12 +7,12 @@ import (
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/service"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 )
 
 func init() {
-	if userApi.GetUserController() == nil {
-		userApi.RegisterUserController(NewUserController())
-	}
+	// Register local controller implementation via Gateway
+	di.Provide[userApi.UserController]("user.controller", NewUserController())
 }
 
 type userController struct {

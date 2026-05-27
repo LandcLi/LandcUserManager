@@ -2,15 +2,14 @@ package user
 
 import (
 	"context"
-	"net/http"
 
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
-	"github.com/gin-gonic/gin"
+	"github.com/LandcLi/landc-go/mvc/pkg/di"
 )
 
-var controller userApi
-
-type userApi interface {
+// UserController defines the user management interface.
+// Both local implementation and remote SDK implement this interface.
+type UserController interface {
 	Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error)
 	Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error)
 	LoginRecord(ctx context.Context, req *v1.LoginRecordRequest) (*v1.LoginRecordResponse, error)
@@ -20,108 +19,37 @@ type userApi interface {
 	ResetPassword(ctx context.Context, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error)
 }
 
-func RegisterUserController(impl userApi) {
-	controller = impl
+// UserRoutes maps controller methods to HTTP endpoints.
+var UserRoutes = di.Routes{
+	"Login":          {Method: "POST", Path: "/api/user/login"},
+	"Register":       {Method: "POST", Path: "/api/user/register"},
+	"LoginRecord":    {Method: "POST", Path: "/api/user/login-record"},
+	"GetUserInfo":    {Method: "POST", Path: "/api/user/get-user-info"},
+	"UpdateUserInfo": {Method: "POST", Path: "/api/user/update-user-info"},
+	"ChangePassword": {Method: "POST", Path: "/api/user/change-password"},
+	"ResetPassword":  {Method: "POST", Path: "/api/user/reset-password"},
 }
 
-func GetUserController() userApi {
-	return controller
+// UserGateway is the service gateway for user management.
+// It provides automatic Gin handler generation and remote proxy support.
+//
+// Local mode (in init() of controller implementation):
+//
+//	user.UserGateway.Provide(localImpl)
+//
+// Remote mode (in main.go):
+//
+//	user.UserGateway.Override(sdk.NewRemoteUserController(url))
+var UserGateway = di.NewGateway[UserController]("user.controller", UserRoutes)
+
+// GetUserController returns the registered UserController implementation.
+// Kept for backward compatibility with existing code (e.g., SSO's auth controller).
+func GetUserController() UserController {
+	return UserGateway.Get()
 }
 
-func Login(c *gin.Context) {
-	var req v1.LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := controller.Login(c.Request.Context(), &req)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, resp)
-}
-
-func Register(c *gin.Context) {
-	var req v1.RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := controller.Register(c.Request.Context(), &req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, resp)
-}
-
-func LoginRecord(c *gin.Context) {
-	var req v1.LoginRecordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := controller.LoginRecord(c.Request.Context(), &req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, resp)
-}
-
-func GetUserInfo(c *gin.Context) {
-	var req v1.GetUserInfoRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := controller.GetUserInfo(c.Request.Context(), &req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, resp)
-}
-
-func UpdateUserInfo(c *gin.Context) {
-	var req v1.UpdateUserInfoRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := controller.UpdateUserInfo(c.Request.Context(), &req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, resp)
-}
-
-func ChangePassword(c *gin.Context) {
-	var req v1.ChangePasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := controller.ChangePassword(c.Request.Context(), &req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, resp)
-}
-
-func ResetPassword(c *gin.Context) {
-	var req v1.ResetPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	resp, err := controller.ResetPassword(c.Request.Context(), &req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, resp)
+// RegisterUserController registers a UserController implementation.
+// Kept for backward compatibility.
+func RegisterUserController(impl UserController) {
+	UserGateway.Provide(impl)
 }

@@ -6,31 +6,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterDefaultRoutes 注册默认路由
+// RegisterDefaultRoutes registers all default routes using Gateway auto-generation.
 func RegisterDefaultRoutes(r *gin.Engine) {
-	// 健康检查
+	// Health check
 	r.GET("/health", HealthCheck)
 
-	// 注册common路由
+	// Register common routes
 	commonGroup := r.Group("/api/common")
 	{
 		commonGroup.POST("/send-verify-code", common.SendVerifyCode)
 	}
 
-	// 注册user路由
-	userGroup := r.Group("/api/user")
-	{
-		userGroup.POST("/login", user.Login)
-		userGroup.POST("/register", user.Register)
-		userGroup.POST("/login-record", user.LoginRecord)
-		userGroup.POST("/get-user-info", user.GetUserInfo)
-		userGroup.POST("/update-user-info", user.UpdateUserInfo)
-		userGroup.POST("/change-password", user.ChangePassword)
-		userGroup.POST("/reset-password", user.ResetPassword)
-	}
+	// Register user routes via Gateway (auto-generates Gin handlers from UserController interface)
+	user.UserGateway.RegisterRoutes(r)
 }
 
-// HealthCheck 健康检查
+// HealthCheck health check endpoint
 func HealthCheck(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"status": "ok",
