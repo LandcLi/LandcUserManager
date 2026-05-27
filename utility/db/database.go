@@ -49,10 +49,15 @@ func InitDatabase(config *config.DatabaseConfig) *gorm.DB {
 	return db
 }
 
-// InitRedis 初始化Redis连接
+// InitRedis 初始化Redis连接 (optional: if Addr is empty, Redis will not be initialized)
 func InitRedis(config *config.RedisConfig) (*redis.Client, error) {
 	if globalRedis != nil {
 		return globalRedis, nil
+	}
+
+	// Skip if Redis is not configured
+	if config == nil || config.Addr == "" {
+		return nil, nil
 	}
 
 	// 创建Redis客户端
@@ -96,11 +101,14 @@ func GetDB() *gorm.DB {
 	return globalDB
 }
 
-// GetRedis 获取Redis连接
+// GetRedis 获取Redis连接 (may return nil if Redis is not configured)
 func GetRedis() *redis.Client {
 	if globalRedis == nil {
-		config := config.GetConfig()
-		client, err := InitRedis(&config.Redis)
+		cfg := config.GetConfig()
+		if cfg == nil || cfg.Redis.Addr == "" {
+			return nil
+		}
+		client, err := InitRedis(&cfg.Redis)
 		if err != nil {
 			return nil
 		}
