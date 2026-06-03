@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/LandcLi/landc-go/mvc/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 // TokenClaims represents the validated token claims.

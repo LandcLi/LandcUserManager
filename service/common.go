@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/LandcLi/LandcUserManager/model"
-	"github.com/LandcLi/landc-go/mvc/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 // CommonService defines common operations interface.

@@ -2,7 +2,7 @@ package dao
 
 import (
 	"github.com/LandcLi/LandcUserManager/model"
-	"github.com/LandcLi/landc-go/mvc/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 // ThirdPartyUserDao defines the third-party user data access interface.

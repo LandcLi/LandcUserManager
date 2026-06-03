@@ -12,7 +12,7 @@ import (
 	"github.com/LandcLi/LandcUserManager/utility/config"
 	"github.com/LandcLi/LandcUserManager/utility/db"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
-	"github.com/LandcLi/landc-go/mvc/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
 	"github.com/LandcLi/landc-go/tools/generate"
 	"github.com/LandcLi/landc-go/tools/mail"
 	"github.com/go-redis/redis/v8"

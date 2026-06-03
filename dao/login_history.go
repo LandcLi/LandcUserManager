@@ -2,7 +2,7 @@ package dao
 
 import (
 	"github.com/LandcLi/LandcUserManager/model"
-	"github.com/LandcLi/landc-go/mvc/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 // LoginHistoryDao defines the login history data access interface.

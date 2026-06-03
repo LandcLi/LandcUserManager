@@ -5,7 +5,7 @@ import (
 
 	"github.com/LandcLi/LandcUserManager/api/user"
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
-	"github.com/LandcLi/landc-go/mvc/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 // RemoteUserController implements user.UserController via HTTP calls.

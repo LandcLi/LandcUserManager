@@ -7,7 +7,7 @@ import (
 	v1 "github.com/LandcLi/LandcUserManager/api/common/v1"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/service"
-	"github.com/LandcLi/landc-go/mvc/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 func init() {

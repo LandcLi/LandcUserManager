@@ -4,7 +4,7 @@ import (
 	"context"
 
 	v1 "github.com/LandcLi/LandcUserManager/api/common/v1"
-	"github.com/LandcLi/landc-go/mvc/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 // CommonController defines the common operations interface.
