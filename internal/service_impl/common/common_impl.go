@@ -10,20 +10,17 @@ import (
 	"github.com/LandcLi/LandcUserManager/service"
 	"github.com/LandcLi/LandcUserManager/utility/client"
 	"github.com/LandcLi/LandcUserManager/utility/config"
-	"github.com/LandcLi/LandcUserManager/utility/db"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
+	framecache "github.com/LandcLi/landc-go/frame/pkg/cache"
 	"github.com/LandcLi/landc-go/frame/pkg/di"
 	"github.com/LandcLi/landc-go/tools/generate"
 	"github.com/LandcLi/landc-go/tools/mail"
-	"github.com/go-redis/redis/v8"
 )
 
-// commonServiceImpl 通用服务实现
 type commonServiceImpl struct {
 	config *config.Config
 }
 
-// NewCommonService 创建通用服务实例
 func NewCommonService() *commonServiceImpl {
 	return &commonServiceImpl{
 		config: config.GetConfig(),
@@ -36,10 +33,8 @@ func init() {
 
 // SendVerifyCode 发送验证码
 func (s *commonServiceImpl) SendVerifyCode(ctx context.Context, req *model.SendVerifyCodeRequest) error {
-	// 生成6位数字验证码
 	verifyCode := generate.MustCaptcha(6)
 
-	// 构建Redis键
 	var key string
 	switch req.VerifyType {
 	case "EMAIL":
@@ -50,36 +45,33 @@ func (s *commonServiceImpl) SendVerifyCode(ctx context.Context, req *model.SendV
 		return errors.New("无效的验证类型")
 	}
 
-	// 存储验证码到Redis，设置5分钟过期
-	redisClient := db.GetRedis()
-	if redisClient == nil {
-		logger.Errorf(ctx, "Redis客户端未初始化")
+	c := framecache.GetCache()
+	if c == nil {
+		logger.Errorf(ctx, "缓存未初始化")
 		return errors.New("验证码发送失败")
 	}
 
-	err := redisClient.Set(ctx, key, verifyCode, 5*time.Minute).Err()
-	if err != nil {
-		logger.Errorf(ctx, "存储验证码到Redis失败: %v", err)
+	if err := c.Set(ctx, key, verifyCode, 5*time.Minute); err != nil {
+		logger.Errorf(ctx, "存储验证码到缓存失败: %v", err)
 		return errors.New("验证码发送失败")
 	}
 
-	// 发送验证码
 	switch req.VerifyType {
 	case "EMAIL":
 		mailClient := client.GetMailClient()
 		if mailClient == nil {
 			return errors.New("邮件客户端未初始化")
 		}
-		err = s.sendMail(req.Identifier, "验证码", fmt.Sprintf("您的验证码是: %s，5分钟内有效", verifyCode))
+		err := s.sendMail(req.Identifier, "验证码", fmt.Sprintf("您的验证码是: %s，5分钟内有效", verifyCode))
+		if err != nil {
+			logger.Errorf(ctx, "发送邮件验证码失败: %v", err)
+			return errors.New("验证码发送失败")
+		}
 	case "PHONE":
-		err = s.sendSMS(req.Identifier, verifyCode)
-	default:
-		return errors.New("无效的验证类型")
-	}
-
-	if err != nil {
-		logger.Errorf(ctx, "发送验证码失败: %v", err)
-		return errors.New("验证码发送失败")
+		if err := s.sendSMS(req.Identifier, verifyCode); err != nil {
+			logger.Errorf(ctx, "发送短信验证码失败: %v", err)
+			return errors.New("验证码发送失败")
+		}
 	}
 
 	return nil
@@ -87,7 +79,6 @@ func (s *commonServiceImpl) SendVerifyCode(ctx context.Context, req *model.SendV
 
 // CheckVerifyCode 验证验证码
 func (s *commonServiceImpl) CheckVerifyCode(ctx context.Context, identifier string, verifyType string, verifyCode string, action string) error {
-	// 构建Redis键
 	var key string
 	switch verifyType {
 	case "EMAIL":
@@ -98,34 +89,27 @@ func (s *commonServiceImpl) CheckVerifyCode(ctx context.Context, identifier stri
 		return errors.New("无效的验证类型")
 	}
 
-	// 从Redis获取验证码
-	redisClient := db.GetRedis()
-	if redisClient == nil {
-		logger.Errorf(ctx, "Redis客户端未初始化")
+	c := framecache.GetCache()
+	if c == nil {
+		logger.Errorf(ctx, "缓存未初始化")
 		return errors.New("验证码验证失败")
 	}
 
-	storedCode, err := redisClient.Get(ctx, key).Result()
+	storedCode, err := c.Get(ctx, key)
 	if err != nil {
-		if err == redis.Nil {
-			return errors.New("验证码已过期或不存在")
-		}
-		logger.Errorf(ctx, "从Redis获取验证码失败: %v", err)
-		return errors.New("验证码验证失败")
+		logger.Errorf(ctx, "从缓存获取验证码失败: %v", err)
+		return errors.New("验证码已过期或不存在")
 	}
 
-	// 验证验证码
 	if storedCode != verifyCode {
 		return errors.New("验证码错误")
 	}
 
-	// 验证码验证成功后删除
-	_ = redisClient.Del(ctx, key).Err()
+	_ = c.Delete(ctx, key)
 
 	return nil
 }
 
-// sendMail 发送邮件
 func (s *commonServiceImpl) sendMail(to string, subject string, body string) error {
 	mailClient := client.GetMailClient()
 	if mailClient == nil {
@@ -140,7 +124,6 @@ func (s *commonServiceImpl) sendMail(to string, subject string, body string) err
 	})
 }
 
-// sendSMS 发送短信
 func (s *commonServiceImpl) sendSMS(phone string, code string) error {
 	if s.config == nil || s.config.SMS.ApiKey == "" {
 		return errors.New("短信配置未设置")

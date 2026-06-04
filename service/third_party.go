@@ -3,97 +3,62 @@ package service
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/utility/config"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
-// -------------------------- 对外暴露的核心接口 --------------------------
-// ThirdPartyAdapter 第三方适配器核心接口（用户自定义适配器需实现此接口）
+// ThirdPartyAdapter 第三方适配器核心接口
 type ThirdPartyAdapter interface {
 	FetchUserInfo(ctx context.Context, accessToken, verifyCode string) (*model.ThirdPartyUser, error)
 }
 
-// AdapterFactory 适配器工厂接口（屏蔽不同Config的创建逻辑）
-// 库默认适配器/用户自定义适配器都需实现此接口
+// AdapterFactory 适配器工厂接口
 type AdapterFactory interface {
-	// Type 返回适配器类型（如"wechat"），与配置中的key对应
 	Type() string
-	// Create 接收通用配置（map[string]interface{}），创建适配器实例
-	// 内部自行解析配置为专属Config，屏蔽外部感知
 	Create(config map[string]interface{}) (ThirdPartyAdapter, error)
 }
 
-// -------------------------- 工厂注册（用于自动初始化） --------------------------
-var (
-	factories       = make(map[string]AdapterFactory) // key=适配器类型（如"wechat"）
-	factoriesRWLock sync.RWMutex
-)
-
-// RegisterAdapterFactory 注册适配器工厂（用户可调用此方法覆盖默认工厂）
+// RegisterAdapterFactory 注册适配器工厂到 DI 容器
 func RegisterAdapterFactory(factory AdapterFactory) {
-	factoriesRWLock.Lock()
-	defer factoriesRWLock.Unlock()
-	factories[factory.Type()] = factory
+	di.Override[AdapterFactory](fmt.Sprintf("adapter.factory.%s", factory.Type()), factory)
 }
 
-// getFactory 获取适配器工厂（内部使用）
-func getFactory(adapterType string) (AdapterFactory, bool) {
-	factoriesRWLock.RLock()
-	defer factoriesRWLock.RUnlock()
-	factory, ok := factories[adapterType]
-	return factory, ok
-}
-
-// GetFactory 获取适配器工厂（对外暴露）
+// GetFactory 获取适配器工厂
 func GetFactory(adapterType string) (AdapterFactory, bool) {
-	return getFactory(adapterType)
+	f, err := di.Resolve[AdapterFactory](fmt.Sprintf("adapter.factory.%s", adapterType))
+	return f, err == nil
 }
 
-// -------------------------- 适配器注册（原有逻辑，对外暴露） --------------------------
-var (
-	adapters       = make(map[string]ThirdPartyAdapter)
-	adaptersRWLock sync.RWMutex
-)
-
-// RegisterThirdPartyAdapter 注册适配器实例（用户可直接注册实例覆盖）
-// 对外暴露，兼容原有逻辑
+// RegisterThirdPartyAdapter 注册适配器实例到 DI 容器
 func RegisterThirdPartyAdapter(adapterType string, adapter ThirdPartyAdapter) {
-	adaptersRWLock.Lock()
-	defer adaptersRWLock.Unlock()
-	adapters[adapterType] = adapter
+	di.Override[ThirdPartyAdapter](fmt.Sprintf("adapter.%s", adapterType), adapter)
 }
 
-// GetThirdPartyAdapter 获取适配器实例（对外暴露）
+// GetThirdPartyAdapter 获取适配器实例
 func GetThirdPartyAdapter(adapterType string) (ThirdPartyAdapter, bool) {
-	adaptersRWLock.RLock()
-	defer adaptersRWLock.RUnlock()
-	adapter, ok := adapters[adapterType]
-	return adapter, ok
+	a, err := di.Resolve[ThirdPartyAdapter](fmt.Sprintf("adapter.%s", adapterType))
+	return a, err == nil
 }
 
 // InitWithConfig 库对外暴露的核心初始化函数
-// 用户只需传入通用配置，自动创建并注册所有适配器
-// 屏蔽Config解析、工厂创建等细节
+// 遍历配置中的所有第三方类型，通过工厂创建并注册适配器
 func InitWithConfig(globalConfig *config.ThirdPartyGlobalConfig) error {
-	// 遍历配置中的所有第三方类型（如"wechat"）
-	for adapterType, config := range globalConfig.ThirdParty {
-		// 1. 获取对应工厂（默认/用户自定义）
-		factory, ok := getFactory(adapterType)
+	for adapterType, cfgMap := range globalConfig.ThirdParty {
+		factory, ok := GetFactory(adapterType)
 		if !ok {
 			return fmt.Errorf("factory not registered for type %s", adapterType)
 		}
 
-		// 2. 通过工厂创建适配器（内部解析Config，屏蔽细节）
-		adapter, err := factory.Create(config)
+		adapter, err := factory.Create(cfgMap)
 		if err != nil {
 			return fmt.Errorf("failed to create adapter %s: %w", adapterType, err)
 		}
 
-		// 3. 注册适配器实例（如果不存在）
+		// 仅在未注册时才注册
 		if _, exists := GetThirdPartyAdapter(adapterType); !exists {
-			RegisterThirdPartyAdapter(adapterType, adapter)
+			di.Provide[ThirdPartyAdapter](fmt.Sprintf("adapter.%s", adapterType), adapter)
 		}
 	}
 	return nil

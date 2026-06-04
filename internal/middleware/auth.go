@@ -1,63 +1,47 @@
 package middleware
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/LandcLi/LandcUserManager/service"
+	"github.com/LandcLi/landc-go/frame/pkg/response"
 	"github.com/gin-gonic/gin"
 )
 
 // Auth returns a Gin middleware that validates Bearer tokens.
 // It uses the registered TokenValidator to validate tokens.
 // If no TokenValidator is registered, all requests are allowed (no-op mode).
-//
-// Usage in routes:
-//
-//	authorized := r.Group("/api/user")
-//	authorized.Use(middleware.Auth())
-//	{
-//	    authorized.POST("/get-user-info", ...)
-//	}
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		validator := service.GetTokenValidator()
 		if validator == nil {
-			// No validator registered, skip authentication (no-op mode)
 			c.Next()
 			return
 		}
 
-		// Extract token from Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "missing authorization header",
-			})
+			response.Unauthorized(c, "missing authorization header")
+			c.Abort()
 			return
 		}
 
-		// Expect "Bearer <token>"
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid authorization header format",
-			})
+			response.Unauthorized(c, "invalid authorization header format")
+			c.Abort()
 			return
 		}
 
 		token := parts[1]
 
-		// Validate token
 		claims, err := validator.ValidateToken(c.Request.Context(), token)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": err.Error(),
-			})
+			response.Unauthorized(c, err.Error())
+			c.Abort()
 			return
 		}
 
-		// Set claims in context for downstream handlers
 		c.Set("UserID", claims.UserID)
 		c.Set("Username", claims.Username)
 		c.Set("Email", claims.Email)

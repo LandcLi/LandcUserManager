@@ -1,33 +1,20 @@
 package sdk
 
 import (
-	"net/http"
+	"github.com/LandcLi/LandcUserManager/api/common"
+	"github.com/LandcLi/LandcUserManager/api/user"
 )
 
-// SDK 完整的SDK实例
+// SDK 完整的SDK实例（基于 di.ProxyClient）
 type SDK struct {
-	Client *Client
-	User   *User
-	Common *Common
+	User   user.UserController
+	Common common.CommonController
 }
 
-// NewSDK 创建完整的SDK实例
+// NewSDK 创建完整的SDK实例（远程模式，通过 HTTP 代理调用）
 func NewSDK(baseURL string) *SDK {
-	client := NewClient(baseURL)
 	return &SDK{
-		Client: client,
-		User:   NewUser(client),
-		Common: NewCommon(client),
-	}
-}
-
-// NewSDKWithHTTPClient 使用自定义的HTTP客户端创建SDK实例
-func NewSDKWithHTTPClient(baseURL string, httpClient *http.Client) *SDK {
-	client := NewClient(baseURL)
-	client.HTTPClient = httpClient
-	return &SDK{
-		Client: client,
-		User:   NewUser(client),
-		Common: NewCommon(client),
+		User:   NewRemoteUserController(baseURL),
+		Common: NewRemoteCommonController(baseURL),
 	}
 }

@@ -11,7 +11,6 @@ var globalLogger facade.Logger
 func InitLogger(config *facade.LogConfig) {
 	if globalLogger == nil {
 		globalLogger = facade.GetLoggerWithLogConfig(config)
-		globalLogger.Info("使用LogConfig的日志")
 	}
 }
 
@@ -22,33 +21,54 @@ func InitLoggerWithLogger(logger facade.Logger) {
 func GetLogger() facade.Logger {
 	return globalLogger
 }
+
 func Debug(ctx context.Context, msg string) {
-	globalLogger.WithContext(ctx).Debug(msg)
+	if globalLogger != nil {
+		globalLogger.WithContext(ctx).Debug(msg)
+	}
 }
 func Info(ctx context.Context, msg string) {
-	globalLogger.WithContext(ctx).Info(msg)
+	if globalLogger != nil {
+		globalLogger.WithContext(ctx).Info(msg)
+	}
 }
 func Warn(ctx context.Context, msg string) {
-	globalLogger.WithContext(ctx).Warn(msg)
+	if globalLogger != nil {
+		globalLogger.WithContext(ctx).Warn(msg)
+	}
 }
 func Error(ctx context.Context, msg string) {
-	globalLogger.WithContext(ctx).Error(msg)
+	if globalLogger != nil {
+		globalLogger.WithContext(ctx).Error(msg)
+	}
 }
 func Fatal(ctx context.Context, msg string) {
-	globalLogger.WithContext(ctx).Fatal(msg)
+	if globalLogger != nil {
+		globalLogger.WithContext(ctx).Fatal(msg)
+	}
 }
 func Debugf(ctx context.Context, format string, v ...interface{}) {
-	globalLogger.WithContext(ctx).Debugf(format, v...)
+	if globalLogger != nil {
+		globalLogger.WithContext(ctx).Debugf(format, v...)
+	}
 }
 func Infof(ctx context.Context, format string, v ...interface{}) {
-	globalLogger.WithContext(ctx).Infof(format, v...)
+	if globalLogger != nil {
+		globalLogger.WithContext(ctx).Infof(format, v...)
+	}
 }
 func Warnf(ctx context.Context, format string, v ...interface{}) {
-	globalLogger.WithContext(ctx).Warnf(format, v...)
+	if globalLogger != nil {
+		globalLogger.WithContext(ctx).Warnf(format, v...)
+	}
 }
 func Errorf(ctx context.Context, format string, v ...interface{}) {
-	globalLogger.WithContext(ctx).Errorf(format, v...)
+	if globalLogger != nil {
+		globalLogger.WithContext(ctx).Errorf(format, v...)
+	}
 }
 func Fatalf(ctx context.Context, format string, v ...interface{}) {
-	globalLogger.WithContext(ctx).Fatalf(format, v...)
+	if globalLogger != nil {
+		globalLogger.WithContext(ctx).Fatalf(format, v...)
+	}
 }
