@@ -1,28 +1,15 @@
 package main
 
 import (
+	"context"
 	"log"
 
-	"github.com/LandcLi/LandcUserManager/api/common"
-	"github.com/LandcLi/LandcUserManager/api/user"
 	_ "github.com/LandcLi/LandcUserManager/internal"
-
-	"github.com/LandcLi/landc-go/frame/pkg/web"
+	"github.com/LandcLi/LandcUserManager/internal/cmd"
 )
 
-func RunMain() error {
-	server := web.NewServer(nil)
-	if err := server.RegisterHandler(common.GetCommonController()); err != nil {
-		return err
-	}
-	if err := server.RegisterHandler(user.GetUserController()); err != nil {
-		return err
-	}
-	return server.RunWithBootstrap()
-}
-
 func main() {
-	if err := RunMain(); err != nil {
+	if err := cmd.Main.Run(context.Background()); err != nil {
 		log.Fatalf("RunMain failed: %v", err)
 	}
 }
