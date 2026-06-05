@@ -1,9 +1,14 @@
 package v1
 
-import "time"
+import (
+	"time"
+
+	"github.com/LandcLi/landc-go/frame/pkg/meta"
+)
 
 // GetUserInfoRequest 获取用户信息请求
 type GetUserInfoRequest struct {
+	meta.Meta `path:"/api/user/get-user-info" method:"POST"`
 	UserID uint `json:"userId" binding:"required"`
 }
 

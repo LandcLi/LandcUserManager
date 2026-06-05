@@ -10,5 +10,6 @@ import (
 	_ "github.com/LandcLi/LandcUserManager/internal/service_impl/third_party"
 	_ "github.com/LandcLi/LandcUserManager/internal/service_impl/user"
 
+	_ "github.com/LandcLi/LandcUserManager/internal/controller/common"
 	_ "github.com/LandcLi/LandcUserManager/internal/controller/user"
 )

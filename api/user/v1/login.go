@@ -1,6 +1,9 @@
 package v1
 
+import "github.com/LandcLi/landc-go/frame/pkg/meta"
+
 type LoginRequest struct {
+	meta.Meta `path:"/api/user/login" method:"POST"`
 	Identifier        string `json:"identifier" binding:"required,min=3,max=50"`
 	AuthCode          string `json:"verifyCode" binding:"required,len=6"` //第三方登陆时为openid,sso系统获取code、access_token然后再调用此接口
 	AccessToken       string `json:"accessToken"`

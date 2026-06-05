@@ -1,13 +1,13 @@
 package common
 
 import (
-	"context"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/web"
 
 	commonApi "github.com/LandcLi/LandcUserManager/api/common"
 	v1 "github.com/LandcLi/LandcUserManager/api/common/v1"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/service"
-	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 func init() {
@@ -21,13 +21,13 @@ func NewCommonController() *commonController {
 	return &commonController{}
 }
 
-func (cc *commonController) SendVerifyCode(ctx context.Context, req *v1.SendVerifyCodeRequest) (*v1.SendVerifyCodeResponse, error) {
+func (cc *commonController) SendVerifyCode(ctx *web.LandcContext, req *v1.SendVerifyCodeRequest) (*v1.SendVerifyCodeResponse, error) {
 	serviceReq := &model.SendVerifyCodeRequest{
 		Identifier: req.Identifier,
 		VerifyType: req.VerifyType,
 		Action:     req.Action,
 	}
-	err := service.GetCommonService().SendVerifyCode(ctx, serviceReq)
+	err := service.GetCommonService().SendVerifyCode(ctx.GetGinContext(), serviceReq)
 	if err != nil {
 		return nil, err
 	}

@@ -1,13 +1,13 @@
 package user
 
 import (
-	"context"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/web"
 
 	userApi "github.com/LandcLi/LandcUserManager/api/user"
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/service"
-	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 func init() {
@@ -21,15 +21,15 @@ type userController struct {
 func NewUserController() *userController {
 	return &userController{}
 }
-func (uc *userController) Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error) {
-	return service.GetUserService().Login(ctx, req)
+func (uc *userController) Login(ctx *web.LandcContext, req *v1.LoginRequest) (*v1.LoginResponse, error) {
+	return service.GetUserService().Login(ctx.GetGinContext(), req)
 }
 
-func (uc *userController) Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error) {
-	return service.GetUserService().Register(ctx, req)
+func (uc *userController) Register(ctx *web.LandcContext, req *v1.RegisterRequest) (*v1.RegisterResponse, error) {
+	return service.GetUserService().Register(ctx.GetGinContext(), req)
 }
 
-func (uc *userController) LoginRecord(ctx context.Context, req *v1.LoginRecordRequest) (*v1.LoginRecordResponse, error) {
+func (uc *userController) LoginRecord(ctx *web.LandcContext, req *v1.LoginRecordRequest) (*v1.LoginRecordResponse, error) {
 	serviceReq := &model.LoginRecordRequest{
 		UserID:            req.UserID,
 		VerifyType:        req.VerifyType,
@@ -40,13 +40,13 @@ func (uc *userController) LoginRecord(ctx context.Context, req *v1.LoginRecordRe
 		Device:            req.Device,
 		Status:            req.Status,
 	}
-	service.GetUserService().LoginRecord(ctx, serviceReq)
+	service.GetUserService().LoginRecord(ctx.GetGinContext(), serviceReq)
 	return &v1.LoginRecordResponse{
 		Success: true,
 	}, nil
 }
 
-func (uc *userController) GetUserInfo(ctx context.Context, req *v1.GetUserInfoRequest) (*v1.GetUserInfoResponse, error) {
+func (uc *userController) GetUserInfo(ctx *web.LandcContext, req *v1.GetUserInfoRequest) (*v1.GetUserInfoResponse, error) {
 	user, err := service.GetUserService().GetUserInfo(req.UserID)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (uc *userController) GetUserInfo(ctx context.Context, req *v1.GetUserInfoRe
 	}, nil
 }
 
-func (uc *userController) UpdateUserInfo(ctx context.Context, req *v1.UpdateUserInfoRequest) (*v1.UpdateUserInfoResponse, error) {
+func (uc *userController) UpdateUserInfo(ctx *web.LandcContext, req *v1.UpdateUserInfoRequest) (*v1.UpdateUserInfoResponse, error) {
 	user, err := service.GetUserService().UpdateUserInfo(req.UserID, req.Nickname, req.Phone, req.Avatar)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (uc *userController) UpdateUserInfo(ctx context.Context, req *v1.UpdateUser
 	}, nil
 }
 
-func (uc *userController) ChangePassword(ctx context.Context, req *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error) {
+func (uc *userController) ChangePassword(ctx *web.LandcContext, req *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error) {
 	err := service.GetUserService().ChangePassword(req.UserID, req.OldPassword, req.NewPassword)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (uc *userController) ChangePassword(ctx context.Context, req *v1.ChangePass
 	}, nil
 }
 
-func (uc *userController) ResetPassword(ctx context.Context, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error) {
+func (uc *userController) ResetPassword(ctx *web.LandcContext, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error) {
 	err := service.GetUserService().ResetPassword(req.Email, req.VerifyCode, req.NewPassword)
 	if err != nil {
 		return nil, err

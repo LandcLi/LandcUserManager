@@ -5,29 +5,25 @@ import (
 	"errors"
 	"time"
 
-	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
-	"github.com/LandcLi/LandcUserManager/dao"
-	"github.com/LandcLi/LandcUserManager/model"
-	"github.com/LandcLi/LandcUserManager/service"
-	"github.com/LandcLi/LandcUserManager/utility/config"
 	"github.com/LandcLi/landc-go/frame/pkg/di"
 	"github.com/LandcLi/landc-go/tools/generate"
 
 	"golang.org/x/crypto/bcrypt"
+
+	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
+	"github.com/LandcLi/LandcUserManager/dao"
+	"github.com/LandcLi/LandcUserManager/model"
+	"github.com/LandcLi/LandcUserManager/service"
 )
 
 func init() {
 	di.Provide[service.UserService]("user.service", NewUserServiceImpl())
 }
 
-type userServiceImpl struct {
-	config *config.Config
-}
+type userServiceImpl struct{}
 
 func NewUserServiceImpl() *userServiceImpl {
-	return &userServiceImpl{
-		config: config.GetConfig(),
-	}
+	return &userServiceImpl{}
 }
 
 // Login 密码验证

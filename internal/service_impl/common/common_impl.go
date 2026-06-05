@@ -6,25 +6,22 @@ import (
 	"fmt"
 	"time"
 
+	framecache "github.com/LandcLi/landc-go/frame/pkg/cache"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
+	"github.com/LandcLi/landc-go/tools/generate"
+	"github.com/LandcLi/landc-go/tools/mail"
+
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/service"
 	"github.com/LandcLi/LandcUserManager/utility/client"
 	"github.com/LandcLi/LandcUserManager/utility/config"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
-	framecache "github.com/LandcLi/landc-go/frame/pkg/cache"
-	"github.com/LandcLi/landc-go/frame/pkg/di"
-	"github.com/LandcLi/landc-go/tools/generate"
-	"github.com/LandcLi/landc-go/tools/mail"
 )
 
-type commonServiceImpl struct {
-	config *config.Config
-}
+type commonServiceImpl struct{}
 
 func NewCommonService() *commonServiceImpl {
-	return &commonServiceImpl{
-		config: config.GetConfig(),
-	}
+	return &commonServiceImpl{}
 }
 
 func init() {
@@ -117,7 +114,7 @@ func (s *commonServiceImpl) sendMail(to string, subject string, body string) err
 	}
 
 	return mailClient.Send(&mail.Email{
-		From:    s.config.Email.From,
+		From:    config.GetConfig().Email.From,
 		To:      []string{to},
 		Subject: subject,
 		Body:    body,
@@ -125,7 +122,7 @@ func (s *commonServiceImpl) sendMail(to string, subject string, body string) err
 }
 
 func (s *commonServiceImpl) sendSMS(phone string, code string) error {
-	if s.config == nil || s.config.SMS.ApiKey == "" {
+	if config.GetConfig() == nil || config.GetConfig().SMS.ApiKey == "" {
 		return errors.New("短信配置未设置")
 	}
 	// todo 实现短信发送逻辑

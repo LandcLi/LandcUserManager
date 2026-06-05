@@ -1,33 +1,22 @@
 package user
 
 import (
-	"context"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/web"
 
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
-	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 // UserController defines the user management interface.
 // Both local implementation and remote SDK implement this interface.
 type UserController interface {
-	Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error)
-	Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error)
-	LoginRecord(ctx context.Context, req *v1.LoginRecordRequest) (*v1.LoginRecordResponse, error)
-	GetUserInfo(ctx context.Context, req *v1.GetUserInfoRequest) (*v1.GetUserInfoResponse, error)
-	UpdateUserInfo(ctx context.Context, req *v1.UpdateUserInfoRequest) (*v1.UpdateUserInfoResponse, error)
-	ChangePassword(ctx context.Context, req *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error)
-	ResetPassword(ctx context.Context, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error)
-}
-
-// UserRoutes maps controller methods to HTTP endpoints.
-var UserRoutes = di.Routes{
-	"Login":          {Method: "POST", Path: "/api/user/login"},
-	"Register":       {Method: "POST", Path: "/api/user/register"},
-	"LoginRecord":    {Method: "POST", Path: "/api/user/login-record"},
-	"GetUserInfo":    {Method: "POST", Path: "/api/user/get-user-info"},
-	"UpdateUserInfo": {Method: "POST", Path: "/api/user/update-user-info"},
-	"ChangePassword": {Method: "POST", Path: "/api/user/change-password"},
-	"ResetPassword":  {Method: "POST", Path: "/api/user/reset-password"},
+	Login(ctx *web.LandcContext, req *v1.LoginRequest) (*v1.LoginResponse, error)
+	Register(ctx *web.LandcContext, req *v1.RegisterRequest) (*v1.RegisterResponse, error)
+	LoginRecord(ctx *web.LandcContext, req *v1.LoginRecordRequest) (*v1.LoginRecordResponse, error)
+	GetUserInfo(ctx *web.LandcContext, req *v1.GetUserInfoRequest) (*v1.GetUserInfoResponse, error)
+	UpdateUserInfo(ctx *web.LandcContext, req *v1.UpdateUserInfoRequest) (*v1.UpdateUserInfoResponse, error)
+	ChangePassword(ctx *web.LandcContext, req *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error)
+	ResetPassword(ctx *web.LandcContext, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error)
 }
 
 // UserGateway is the service gateway for user management.
@@ -40,7 +29,7 @@ var UserRoutes = di.Routes{
 // Remote mode (in main.go):
 //
 //	user.UserGateway.Override(sdk.NewRemoteUserController(url))
-var UserGateway = di.NewGateway[UserController]("user.controller", UserRoutes)
+var UserGateway = di.NewGateway[UserController]("user.controller")
 
 // GetUserController returns the registered UserController implementation.
 // Kept for backward compatibility with existing code (e.g., SSO's auth controller).

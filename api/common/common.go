@@ -1,24 +1,19 @@
 package common
 
 import (
-	"context"
+	"github.com/LandcLi/landc-go/frame/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/web"
 
 	v1 "github.com/LandcLi/LandcUserManager/api/common/v1"
-	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
 
 // CommonController defines the common operations interface.
 type CommonController interface {
-	SendVerifyCode(ctx context.Context, req *v1.SendVerifyCodeRequest) (*v1.SendVerifyCodeResponse, error)
-}
-
-// CommonRoutes maps controller methods to HTTP endpoints.
-var CommonRoutes = di.Routes{
-	"SendVerifyCode": {Method: "POST", Path: "/api/common/send-verify-code"},
+	SendVerifyCode(ctx *web.LandcContext, req *v1.SendVerifyCodeRequest) (*v1.SendVerifyCodeResponse, error)
 }
 
 // CommonGateway is the service gateway for common operations.
-var CommonGateway = di.NewGateway[CommonController]("common.controller", CommonRoutes)
+var CommonGateway = di.NewGateway[CommonController]("common.controller")
 
 // GetCommonController returns the registered CommonController implementation.
 func GetCommonController() CommonController {

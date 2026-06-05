@@ -1,7 +1,10 @@
 package v1
 
+import "github.com/LandcLi/landc-go/frame/pkg/meta"
+
 // LoginRecordRequest 登录记录请求
 type LoginRecordRequest struct {
+	meta.Meta `path:"/api/user/login-record" method:"POST"`
 	UserID            uint   `json:"userId" binding:"required"`
 	VerifyType        string `json:"verifyType" binding:"required,oneof=EMAIL PHONE USERNAME"`
 	Remark            string `json:"remark" binding:"required,min=3,max=255"`

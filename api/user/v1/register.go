@@ -1,7 +1,10 @@
 package v1
 
+import "github.com/LandcLi/landc-go/frame/pkg/meta"
+
 // RegisterRequest 注册请求
 type RegisterRequest struct {
+	meta.Meta `path:"/api/user/register" method:"POST"`
 	Identifier        string `json:"identifier" binding:"required,min=3,max=50"`
 	Password          string `json:"password" binding:"required,min=6,max=50"`
 	AuthCode          string `json:"verifyCode" binding:"required,len=6"`

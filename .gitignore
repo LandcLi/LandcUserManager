@@ -29,7 +29,7 @@ go.work
 Thumbs.db
 
 # Configuration files
-config.yml
+config.yaml
 *.local.yml
 
 # Log files
