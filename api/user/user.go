@@ -29,7 +29,9 @@ type UserController interface {
 //
 // Remote mode (in main.go):
 //
-//	user.UserGateway.Override(sdk.NewRemoteUserController(url))
+//	user.UserGateway.ProvideRemote("http://user-service:8081")
+//	client := user.UserGateway.GetClient()
+//	resp, err := di.Call[LoginResponse](client, ctx, "Login", req)
 var UserGateway = di.NewGateway[UserController]("user.controller")
 
 // GetUserController returns the registered UserController implementation.
