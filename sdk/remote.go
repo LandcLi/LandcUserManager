@@ -3,9 +3,7 @@ package sdk
 import (
 	"context"
 
-	"github.com/LandcLi/LandcUserManager/api/common"
 	commonV1 "github.com/LandcLi/LandcUserManager/api/common/v1"
-	"github.com/LandcLi/LandcUserManager/api/user"
 	userV1 "github.com/LandcLi/LandcUserManager/api/user/v1"
 	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
@@ -23,7 +21,7 @@ type RemoteUserController struct {
 //	user.UserGateway.Override(remote)
 func NewRemoteUserController(baseURL string, opts ...di.RemoteOption) *RemoteUserController {
 	return &RemoteUserController{
-		client: di.NewProxyClient(baseURL, user.UserRoutes, opts...),
+		client: di.NewProxyClient(baseURL, opts...),
 	}
 }
 
@@ -65,7 +63,7 @@ type RemoteCommonController struct {
 // NewRemoteCommonController creates a remote common controller.
 func NewRemoteCommonController(baseURL string, opts ...di.RemoteOption) *RemoteCommonController {
 	return &RemoteCommonController{
-		client: di.NewProxyClient(baseURL, common.CommonRoutes, opts...),
+		client: di.NewProxyClient(baseURL, opts...),
 	}
 }
 
