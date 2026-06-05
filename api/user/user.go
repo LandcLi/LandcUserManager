@@ -1,8 +1,9 @@
 package user
 
 import (
+	"context"
+
 	"github.com/LandcLi/landc-go/frame/pkg/di"
-	"github.com/LandcLi/landc-go/frame/pkg/web"
 
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
 )
@@ -10,13 +11,13 @@ import (
 // UserController defines the user management interface.
 // Both local implementation and remote SDK implement this interface.
 type UserController interface {
-	Login(ctx *web.LandcContext, req *v1.LoginRequest) (*v1.LoginResponse, error)
-	Register(ctx *web.LandcContext, req *v1.RegisterRequest) (*v1.RegisterResponse, error)
-	LoginRecord(ctx *web.LandcContext, req *v1.LoginRecordRequest) (*v1.LoginRecordResponse, error)
-	GetUserInfo(ctx *web.LandcContext, req *v1.GetUserInfoRequest) (*v1.GetUserInfoResponse, error)
-	UpdateUserInfo(ctx *web.LandcContext, req *v1.UpdateUserInfoRequest) (*v1.UpdateUserInfoResponse, error)
-	ChangePassword(ctx *web.LandcContext, req *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error)
-	ResetPassword(ctx *web.LandcContext, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error)
+	Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error)
+	Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error)
+	LoginRecord(ctx context.Context, req *v1.LoginRecordRequest) (*v1.LoginRecordResponse, error)
+	GetUserInfo(ctx context.Context, req *v1.GetUserInfoRequest) (*v1.GetUserInfoResponse, error)
+	UpdateUserInfo(ctx context.Context, req *v1.UpdateUserInfoRequest) (*v1.UpdateUserInfoResponse, error)
+	ChangePassword(ctx context.Context, req *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error)
+	ResetPassword(ctx context.Context, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error)
 }
 
 // UserGateway is the service gateway for user management.
