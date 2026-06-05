@@ -12,24 +12,17 @@ import (
 
 func RunMain() error {
 	server := web.NewServer(nil)
-	err := server.RegisterHandler(common.GetCommonController())
-	if err != nil {
+	if err := server.RegisterHandler(common.GetCommonController()); err != nil {
 		return err
 	}
-	err = server.RegisterHandler(user.GetUserController())
-	if err != nil {
+	if err := server.RegisterHandler(user.GetUserController()); err != nil {
 		return err
 	}
-	err = server.RunWithBootstrap()
-	if err != nil {
-		return err
-	}
-	return nil
+	return server.RunWithBootstrap()
 }
 
 func main() {
-	err := RunMain()
-	if err != nil {
+	if err := RunMain(); err != nil {
 		log.Fatalf("RunMain failed: %v", err)
 	}
 }

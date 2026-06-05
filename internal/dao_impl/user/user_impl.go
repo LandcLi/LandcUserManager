@@ -11,21 +11,16 @@ import (
 	framedb "github.com/LandcLi/landc-go/frame/pkg/db"
 	"github.com/LandcLi/landc-go/frame/pkg/di"
 
-	"gorm.io/gorm"
 )
 
 func init() {
 	di.Provide[dao.UserDao]("user.dao", NewUserImpl())
 }
 
-type userImpl struct {
-	orm *gorm.DB
-}
+type userImpl struct{}
 
 func NewUserImpl() *userImpl {
-	return &userImpl{
-		orm: framedb.GetDB(),
-	}
+	return &userImpl{}
 }
 
 func (r *userImpl) cache() framecache.Cache {
@@ -34,7 +29,7 @@ func (r *userImpl) cache() framecache.Cache {
 
 // Create 创建用户
 func (r *userImpl) Create(user *model.User) (*model.User, error) {
-	err := r.orm.Create(user).Error
+	err := framedb.GetDB().Create(user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +48,7 @@ func (r *userImpl) FindByID(id uint) (*model.User, error) {
 	}
 
 	var user model.User
-	err := r.orm.First(&user, id).Error
+	err := framedb.GetDB().First(&user, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +73,7 @@ func (r *userImpl) FindByUsername(username string) (*model.User, error) {
 	}
 
 	var user model.User
-	err := r.orm.Where("username = ?", username).First(&user).Error
+	err := framedb.GetDB().Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +89,7 @@ func (r *userImpl) FindByUsername(username string) (*model.User, error) {
 // FindByUsernameFromDB 跳过缓存，直接查库
 func (r *userImpl) FindByUsernameFromDB(username string) (*model.User, error) {
 	var user model.User
-	err := r.orm.Where("username = ?", username).First(&user).Error
+	err := framedb.GetDB().Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +99,7 @@ func (r *userImpl) FindByUsernameFromDB(username string) (*model.User, error) {
 // FindByEmailFromDB 跳过缓存，直接查库
 func (r *userImpl) FindByEmailFromDB(email string) (*model.User, error) {
 	var user model.User
-	err := r.orm.Where("email = ?", email).First(&user).Error
+	err := framedb.GetDB().Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +109,7 @@ func (r *userImpl) FindByEmailFromDB(email string) (*model.User, error) {
 // FindByPhoneFromDB 跳过缓存，直接查库
 func (r *userImpl) FindByPhoneFromDB(phone string) (*model.User, error) {
 	var user model.User
-	err := r.orm.Where("phone = ?", phone).First(&user).Error
+	err := framedb.GetDB().Where("phone = ?", phone).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +128,7 @@ func (r *userImpl) FindByEmail(email string) (*model.User, error) {
 	}
 
 	var user model.User
-	err := r.orm.Where("email = ?", email).First(&user).Error
+	err := framedb.GetDB().Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +153,7 @@ func (r *userImpl) FindByPhone(phone string) (*model.User, error) {
 	}
 
 	var user model.User
-	err := r.orm.Where("phone = ?", phone).First(&user).Error
+	err := framedb.GetDB().Where("phone = ?", phone).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +168,7 @@ func (r *userImpl) FindByPhone(phone string) (*model.User, error) {
 
 // Update 更新用户并刷新缓存
 func (r *userImpl) Update(user *model.User) (*model.User, error) {
-	err := r.orm.Save(user).Error
+	err := framedb.GetDB().Save(user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +195,7 @@ func (r *userImpl) Update(user *model.User) (*model.User, error) {
 // Delete 删除用户并清除缓存
 func (r *userImpl) Delete(id uint) error {
 	var user model.User
-	if err := r.orm.First(&user, id).Error; err == nil {
+	if err := framedb.GetDB().First(&user, id).Error; err == nil {
 		if c := r.cache(); c != nil {
 			_ = c.Delete(context.Background(),
 				fmt.Sprintf("user:id:%d", id),
@@ -211,7 +206,7 @@ func (r *userImpl) Delete(id uint) error {
 		}
 	}
 
-	return r.orm.Delete(&model.User{}, id).Error
+	return framedb.GetDB().Delete(&model.User{}, id).Error
 }
 
 // ClearUserCache 清除用户缓存
@@ -240,13 +235,13 @@ func (r *userImpl) List(page, pageSize int) ([]*model.User, int64, error) {
 	var users []*model.User
 	var total int64
 
-	err := r.orm.Model(&model.User{}).Count(&total).Error
+	err := framedb.GetDB().Model(&model.User{}).Count(&total).Error
 	if err != nil {
 		return nil, 0, err
 	}
 
 	offset := (page - 1) * pageSize
-	err = r.orm.Offset(offset).Limit(pageSize).Find(&users).Error
+	err = framedb.GetDB().Offset(offset).Limit(pageSize).Find(&users).Error
 	if err != nil {
 		return nil, 0, err
 	}
