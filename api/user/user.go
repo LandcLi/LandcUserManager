@@ -27,11 +27,15 @@ type UserController interface {
 //
 //	user.UserGateway.Provide(localImpl)
 //
-// Remote mode (in main.go):
+// Remote mode (in main.go): (need to run 'landc gen proxy' first to generate proxy code)
 //
 //	user.UserGateway.ProvideRemote("http://user-service:8081")
-//	client := user.UserGateway.GetClient()
-//	resp, err := di.Call[LoginResponse](client, ctx, "Login", req)
+//
+// Generated proxy code lives in the same package as the interface.
+// After registration, call sites are identical:
+//
+//	ctrl := user.UserGateway.Get()
+//	resp, err := ctrl.Login(ctx, req)
 var UserGateway = di.NewGateway[UserController]("user.controller")
 
 // GetUserController returns the registered UserController implementation.
