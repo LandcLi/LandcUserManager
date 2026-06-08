@@ -11,7 +11,7 @@ import (
 
 // Main is the main application command.
 var Main = cmd.NewCommand("main", "start HTTP server", func(ctx context.Context, parser *cmd.Parser) error {
-	server := web.NewServer(nil)
+	server := web.New()
 	if err := server.RegisterHandler(common.GetCommonController()); err != nil {
 		return err
 	}

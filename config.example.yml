@@ -1,13 +1,14 @@
 # 服务器配置
 server:
   port: 8080
-  host: "0.0.0.0"
+  addr: "0.0.0.0"
   read_timeout: 30
   write_timeout: 30
 
 # 数据库配置
 database:
-  dsn: "user:password@tcp(localhost:3306)/landc_user_manager?charset=utf8mb4&parseTime=True&loc=Local"
+  driver: "mysql"
+  dsn: "user:password@tcp(127.0.0.1:3306)/user_manager?charset=utf8mb4&parseTime=True&loc=Local"
   max_idle_conns: 10
   max_open_conns: 100
   conn_max_lifetime: 3600
@@ -49,8 +50,8 @@ sms:
 
 # 日志配置
 logger:
-  provider: "file"
-  level: "info"
+  provider: "console"
+  level: 1
   format: "json"
   outputPath: "./logs"
 
