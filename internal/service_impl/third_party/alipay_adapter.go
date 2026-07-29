@@ -3,15 +3,15 @@ package third_party
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/LandcLi/LandcUserManager/model"
+	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	"github.com/LandcLi/LandcUserManager/service"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
-
-	"github.com/LandcLi/LandcUserManager/model"
 )
 
 // -------------------------- 支付宝专属Config（内部屏蔽，不对外暴露） --------------------------
@@ -42,7 +42,7 @@ func (a *alipayAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 		"auth_token": accessToken,
 	}
 
-	// TODO: 这里需要添加签名逻辑
+	// TODO: implement Alipay signature logic (planned feature)
 	// 实际项目中，需要根据支付宝文档生成签名
 
 	// 构建请求URL
@@ -55,7 +55,7 @@ func (a *alipayAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 	userInfoResp, err := http.Get(userInfoURL + "?" + userInfoParamsStr)
 	if err != nil {
 		logger.Errorf(ctx, "获取支付宝用户信息失败: %v", err)
-		return nil, errors.New("获取支付宝用户信息失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrFetchUserInfoFailed, err)
 	}
 	defer userInfoResp.Body.Close()
 
@@ -79,13 +79,13 @@ func (a *alipayAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 
 	if err := json.NewDecoder(userInfoResp.Body).Decode(&userInfoData); err != nil {
 		logger.Errorf(ctx, "解析支付宝用户信息响应失败: %v", err)
-		return nil, errors.New("解析支付宝用户信息响应失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrParseResponseFailed, err)
 	}
 
 	// 检查是否有错误
 	if userInfoData.ErrorResponse.Code != "" {
 		logger.Errorf(ctx, "支付宝API错误: %s, %s", userInfoData.ErrorResponse.SubCode, userInfoData.ErrorResponse.SubMsg)
-		return nil, errors.New("支付宝API错误: " + userInfoData.ErrorResponse.SubMsg)
+		return nil, fmt.Errorf("alipay %s%s", lumerrors.ErrAPIError, userInfoData.ErrorResponse.SubMsg)
 	}
 
 	return &model.ThirdPartyUser{

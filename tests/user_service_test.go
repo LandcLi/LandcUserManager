@@ -2,10 +2,13 @@ package tests
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/LandcLi/LandcUserManager/api/user/v1"
 	"github.com/LandcLi/LandcUserManager/model"
+	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
+	constants "github.com/LandcLi/LandcUserManager/pkg/consts"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -38,8 +41,8 @@ func TestLoginPasswordByUsername_Success(t *testing.T) {
 	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "testuser",
 		AuthCode:   "pass123",
-		AuthType:   "PASSWORD",
-		VerifyType: "USERNAME",
+		AuthType:   constants.AuthTypePassword,
+		VerifyType: constants.VerifyTypeUsername,
 	})
 	if err != nil {
 		t.Fatalf("Login failed: %v", err)
@@ -56,8 +59,8 @@ func TestLoginPasswordByEmail_Success(t *testing.T) {
 	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "user1@example.com",
 		AuthCode:   "pwd456",
-		AuthType:   "PASSWORD",
-		VerifyType: "EMAIL",
+		AuthType:   constants.AuthTypePassword,
+		VerifyType: constants.VerifyTypeEmail,
 	})
 	if err != nil {
 		t.Fatalf("Login failed: %v", err)
@@ -74,8 +77,8 @@ func TestLoginPasswordByPhone_Success(t *testing.T) {
 	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "13800138000",
 		AuthCode:   "pwd789",
-		AuthType:   "PASSWORD",
-		VerifyType: "PHONE",
+		AuthType:   constants.AuthTypePassword,
+		VerifyType: constants.VerifyTypePhone,
 	})
 	if err != nil {
 		t.Fatalf("Login failed: %v", err)
@@ -90,11 +93,14 @@ func TestLoginPassword_UserNotFound(t *testing.T) {
 	_, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "nonexistent",
 		AuthCode:   "pass123",
-		AuthType:   "PASSWORD",
-		VerifyType: "USERNAME",
+		AuthType:   constants.AuthTypePassword,
+		VerifyType: constants.VerifyTypeUsername,
 	})
 	if err == nil {
 		t.Fatal("expected error for non-existent user")
+	}
+	if !errors.Is(err, lumerrors.ErrUserNotFound) {
+		t.Fatalf("expected ErrUserNotFound, got: %v", err)
 	}
 }
 
@@ -105,11 +111,11 @@ func TestLoginPassword_WrongPassword(t *testing.T) {
 	_, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "user3",
 		AuthCode:   "wrongPassword",
-		AuthType:   "PASSWORD",
-		VerifyType: "USERNAME",
+		AuthType:   constants.AuthTypePassword,
+		VerifyType: constants.VerifyTypeUsername,
 	})
-	if err == nil || err.Error() != "密码错误" {
-		t.Fatalf("expected '密码错误' error, got: %v", err)
+	if err == nil || !errors.Is(err, lumerrors.ErrPasswordIncorrect) {
+		t.Fatalf("expected ErrPasswordIncorrect error, got: %v", err)
 	}
 }
 
@@ -120,11 +126,11 @@ func TestLoginPassword_DisabledUser(t *testing.T) {
 	_, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "disabledUser",
 		AuthCode:   "pass123",
-		AuthType:   "PASSWORD",
-		VerifyType: "USERNAME",
+		AuthType:   constants.AuthTypePassword,
+		VerifyType: constants.VerifyTypeUsername,
 	})
-	if err == nil || err.Error() != "用户已禁用" {
-		t.Fatalf("expected '用户已禁用' error, got: %v", err)
+	if err == nil || !errors.Is(err, lumerrors.ErrUserDisabled) {
+		t.Fatalf("expected ErrUserDisabled error, got: %v", err)
 	}
 }
 
@@ -133,7 +139,7 @@ func TestLoginPassword_InvalidVerifyType(t *testing.T) {
 	_, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "test",
 		AuthCode:   "pass",
-		AuthType:   "PASSWORD",
+		AuthType:   constants.AuthTypePassword,
 		VerifyType: "INVALID",
 	})
 	if err == nil {
@@ -147,10 +153,10 @@ func TestLogin_InvalidAuthType(t *testing.T) {
 		Identifier: "test",
 		AuthCode:   "pass",
 		AuthType:   "INVALID",
-		VerifyType: "USERNAME",
+		VerifyType: constants.VerifyTypeUsername,
 	})
-	if err == nil || err.Error() != "无效的认证类型" {
-		t.Fatalf("expected '无效的认证类型' error, got: %v", err)
+	if err == nil || !errors.Is(err, lumerrors.ErrInvalidAuthType) {
+		t.Fatalf("expected ErrInvalidAuthType error, got: %v", err)
 	}
 }
 
@@ -164,8 +170,8 @@ func TestLoginVerifyCode_ExistingUser_Success(t *testing.T) {
 	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "user4@example.com",
 		AuthCode:   "123456",
-		AuthType:   "VERIFY_CODE",
-		VerifyType: "EMAIL",
+		AuthType:   constants.AuthTypeVerifyCode,
+		VerifyType: constants.VerifyTypeEmail,
 	})
 	if err != nil {
 		t.Fatalf("Login failed: %v", err)
@@ -183,8 +189,8 @@ func TestLoginVerifyCode_WrongCode(t *testing.T) {
 	_, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "user5@example.com",
 		AuthCode:   "000000",
-		AuthType:   "VERIFY_CODE",
-		VerifyType: "EMAIL",
+		AuthType:   constants.AuthTypeVerifyCode,
+		VerifyType: constants.VerifyTypeEmail,
 	})
 	if err == nil {
 		t.Fatal("expected error for wrong verify code")
@@ -195,11 +201,11 @@ func TestLoginVerifyCode_AutoCreateUser(t *testing.T) {
 	reset()
 	mockCommonService.VerifyCode = "654321"
 
-	_, err := getUserService().Login(context.Background(), &v1.LoginRequest{
+	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier:        "newuser@example.com",
 		AuthCode:          "654321",
-		AuthType:          "VERIFY_CODE",
-		VerifyType:        "EMAIL",
+		AuthType:          constants.AuthTypeVerifyCode,
+		VerifyType:        constants.VerifyTypeEmail,
 		DeviceFingerprint: "device-1",
 		UserAgent:         "test-agent",
 		IP:                "127.0.0.1",
@@ -207,13 +213,16 @@ func TestLoginVerifyCode_AutoCreateUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Login auto-create failed: %v", err)
 	}
+	if resp.UserID == 0 {
+		t.Fatal("expected non-zero UserID after auto-create")
+	}
 	// Verify user was created
 	user, err := mockUserDao.FindByEmail("newuser@example.com")
 	if err != nil {
 		t.Fatal("expected user to be auto-created")
 	}
-	if user.Username != "后续使用方法生成" {
-		t.Fatalf("expected default username, got: %s", user.Username)
+	if user.Username == "" {
+		t.Fatal("expected non-empty username")
 	}
 }
 
@@ -236,7 +245,7 @@ func TestLoginThirdParty_MatchByOpenID(t *testing.T) {
 	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier:  "github-open-123",
 		AuthCode:    "github-open-123",
-		AuthType:    "THIRD_PARTY",
+		AuthType:    constants.AuthTypeThirdParty,
 		VerifyType:  "github",
 		AccessToken: "github-token",
 	})
@@ -267,7 +276,7 @@ func TestLoginThirdParty_MatchByUnionID(t *testing.T) {
 	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier:  "wx-open-new",
 		AuthCode:    "code",
-		AuthType:    "THIRD_PARTY",
+		AuthType:    constants.AuthTypeThirdParty,
 		VerifyType:  "wechat",
 		AccessToken: "wx-token",
 	})
@@ -292,7 +301,7 @@ func TestLoginThirdParty_MatchByEmail(t *testing.T) {
 	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier:  "github-open-999",
 		AuthCode:    "code",
-		AuthType:    "THIRD_PARTY",
+		AuthType:    constants.AuthTypeThirdParty,
 		VerifyType:  "github",
 		AccessToken: "token",
 	})
@@ -315,7 +324,7 @@ func TestLoginThirdParty_AutoCreateUser(t *testing.T) {
 	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier:        "github-new-openid",
 		AuthCode:          "code",
-		AuthType:          "THIRD_PARTY",
+		AuthType:          constants.AuthTypeThirdParty,
 		VerifyType:        "github",
 		AccessToken:       "new-token",
 		DeviceFingerprint: "device-tp",
@@ -340,8 +349,8 @@ func TestRegister_Success(t *testing.T) {
 		Identifier:        "newuser",
 		AuthCode:          "888888",
 		Password:          "mypassword",
-		AuthType:          "VERIFY_CODE",
-		VerifyType:        "USERNAME",
+		AuthType:          constants.AuthTypeVerifyCode,
+		VerifyType:        constants.VerifyTypeUsername,
 		DeviceFingerprint: "device-new",
 		UserAgent:         "agent",
 		IP:                "10.0.0.1",
@@ -363,11 +372,11 @@ func TestRegister_DuplicateUser(t *testing.T) {
 		Identifier: "existing",
 		AuthCode:   "999999",
 		Password:   "pass123",
-		AuthType:   "VERIFY_CODE",
-		VerifyType: "USERNAME",
+		AuthType:   constants.AuthTypeVerifyCode,
+		VerifyType: constants.VerifyTypeUsername,
 	})
-	if err == nil || err.Error() != "用户已存在" {
-		t.Fatalf("expected '用户已存在' error, got: %v", err)
+	if err == nil || !errors.Is(err, lumerrors.ErrUserAlreadyExists) {
+		t.Fatalf("expected ErrUserAlreadyExists error, got: %v", err)
 	}
 }
 
@@ -378,7 +387,7 @@ func TestRegister_InvalidVerifyType(t *testing.T) {
 		Identifier: "test",
 		AuthCode:   "123456",
 		Password:   "pass",
-		AuthType:   "VERIFY_CODE",
+		AuthType:   constants.AuthTypeVerifyCode,
 		VerifyType: "INVALID",
 	})
 	if err == nil {
@@ -472,8 +481,8 @@ func TestChangePassword_Success(t *testing.T) {
 	_, err = getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "changepwd",
 		AuthCode:   "newPass1",
-		AuthType:   "PASSWORD",
-		VerifyType: "USERNAME",
+		AuthType:   constants.AuthTypePassword,
+		VerifyType: constants.VerifyTypeUsername,
 	})
 	if err != nil {
 		t.Fatal("expected login with new password to succeed")
@@ -485,8 +494,8 @@ func TestChangePassword_WrongOldPassword(t *testing.T) {
 	user := addTestUser("cpuser", "", "", "correctOld", 1)
 
 	err := getUserService().ChangePassword(user.ID, "wrongOld", "newPass")
-	if err == nil || err.Error() != "旧密码错误" {
-		t.Fatalf("expected '旧密码错误' error, got: %v", err)
+	if err == nil || !errors.Is(err, lumerrors.ErrOldPasswordWrong) {
+		t.Fatalf("expected ErrOldPasswordWrong error, got: %v", err)
 	}
 }
 
@@ -514,8 +523,8 @@ func TestResetPassword_Success(t *testing.T) {
 	_, err = getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier: "reset@example.com",
 		AuthCode:   "newPwd123",
-		AuthType:   "PASSWORD",
-		VerifyType: "EMAIL",
+		AuthType:   constants.AuthTypePassword,
+		VerifyType: constants.VerifyTypeEmail,
 	})
 	if err != nil {
 		t.Fatal("expected login with new password to succeed")
@@ -643,8 +652,8 @@ func TestLogin_NewDeviceAndDifferentLocation(t *testing.T) {
 	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier:        "secureuser",
 		AuthCode:          "pass123",
-		AuthType:          "PASSWORD",
-		VerifyType:        "USERNAME",
+		AuthType:          constants.AuthTypePassword,
+		VerifyType:        constants.VerifyTypeUsername,
 		DeviceFingerprint: "new-device",
 		IP:                "10.0.0.5",
 	})

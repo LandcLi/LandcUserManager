@@ -28,7 +28,7 @@ type Config struct {
 	HTTPClient   HTTPClientConfig
 	LoginHistory LoginHistoryConfig
 	RateLimit    RateLimitConfig
-	ThridParty   ThirdPartyGlobalConfig
+	ThirdParty   ThirdPartyGlobalConfig
 }
 
 type ServerConfig struct {
@@ -128,7 +128,7 @@ func extractLUMConfig(fc *frameconfig.Config) *Config {
 		cfg.HTTPClient, _ = fc.Other["http_client"].(HTTPClientConfig)
 		cfg.LoginHistory, _ = fc.Other["login_history"].(LoginHistoryConfig)
 		cfg.RateLimit, _ = fc.Other["rate_limit"].(RateLimitConfig)
-		cfg.ThridParty, _ = fc.Other["third_party"].(ThirdPartyGlobalConfig)
+		cfg.ThirdParty, _ = fc.Other["third_party"].(ThirdPartyGlobalConfig)
 	}
 
 	return cfg

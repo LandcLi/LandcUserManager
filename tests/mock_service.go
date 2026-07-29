@@ -2,10 +2,10 @@ package tests
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	"github.com/LandcLi/LandcUserManager/model"
+	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	"github.com/LandcLi/LandcUserManager/service"
 	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
@@ -36,7 +36,7 @@ func (m *MockCommonService) CheckVerifyCode(ctx context.Context, identifier stri
 	if m.VerifyCode != "" && verifyCode == m.VerifyCode {
 		return nil
 	}
-	return errors.New("验证码错误")
+	return lumerrors.ErrVerifyCodeWrong
 }
 
 // MockThirdPartyAdapter mocks the ThirdPartyAdapter interface
@@ -50,7 +50,7 @@ func NewMockThirdPartyAdapter(user *model.ThirdPartyUser) *MockThirdPartyAdapter
 
 func (m *MockThirdPartyAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCode string) (*model.ThirdPartyUser, error) {
 	if m.User == nil {
-		return nil, errors.New("mock adapter: no user configured")
+		return nil, lumerrors.ErrFetchUserInfoFailed
 	}
 	return m.User, nil
 }

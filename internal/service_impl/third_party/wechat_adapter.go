@@ -3,11 +3,11 @@ package third_party
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/LandcLi/LandcUserManager/model"
+	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	"github.com/LandcLi/LandcUserManager/service"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
 )
@@ -32,7 +32,7 @@ func (a *wechatAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 	userInfoResp, err := http.Get(userInfoURL + "?" + userInfoParams)
 	if err != nil {
 		logger.Errorf(ctx, "获取微信用户信息失败: %v", err)
-		return nil, errors.New("获取微信用户信息失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrFetchUserInfoFailed, err)
 	}
 	defer userInfoResp.Body.Close()
 
@@ -51,11 +51,11 @@ func (a *wechatAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 
 	if err := json.NewDecoder(userInfoResp.Body).Decode(&userInfoData); err != nil {
 		logger.Errorf(ctx, "解析微信用户信息响应失败: %v", err)
-		return nil, errors.New("解析微信用户信息响应失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrParseResponseFailed, err)
 	}
 	if userInfoData.Errcode != 0 {
 		logger.Errorf(ctx, "微信API错误: %d, %s", userInfoData.Errcode, userInfoData.Errmsg)
-		return nil, errors.New("微信API错误: " + userInfoData.Errmsg)
+		return nil, fmt.Errorf("wechat %s%s", lumerrors.ErrAPIError, userInfoData.Errmsg)
 	}
 
 	// 转换性别

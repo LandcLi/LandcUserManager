@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/LandcLi/landc-go/frame/pkg/di"
@@ -12,8 +11,12 @@ import (
 
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
 	"github.com/LandcLi/LandcUserManager/dao"
+	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/service"
+	"github.com/LandcLi/LandcUserManager/utility/logger"
+
+	constants "github.com/LandcLi/LandcUserManager/pkg/consts"
 )
 
 func init() {
@@ -33,20 +36,20 @@ func (s *userServiceImpl) Login(ctx context.Context, req *v1.LoginRequest) (*v1.
 		err  error
 	)
 	switch req.AuthType {
-	case "PASSWORD":
+	case constants.AuthTypePassword:
 		user, err = s.handleAuthByPassword(ctx, req)
-	case "VERIFY_CODE":
+	case constants.AuthTypeVerifyCode:
 		user, err = s.handleAuthByVerifyCode(ctx, req)
-	case "THIRD_PARTY":
+	case constants.AuthTypeThirdParty:
 		user, err = s.handleAuthByThirdParty(ctx, req)
 	default:
-		return nil, errors.New("无效的认证类型")
+		return nil, lumerrors.ErrInvalidAuthType
 	}
 	if err != nil {
 		return nil, err
 	}
 	if user.Status != 1 {
-		return nil, errors.New("用户已禁用")
+		return nil, lumerrors.ErrUserDisabled
 	}
 
 	isNewDevice := s.detectTrustedDevice(user.ID, req.DeviceFingerprint)
@@ -65,21 +68,21 @@ func (s *userServiceImpl) handleAuthByPassword(ctx context.Context, req *v1.Logi
 		err  error
 	)
 	switch req.VerifyType {
-	case "EMAIL":
+	case constants.VerifyTypeEmail:
 		user, err = dao.GetUserDao().FindByEmailFromDB(req.Identifier)
-	case "PHONE":
+	case constants.VerifyTypePhone:
 		user, err = dao.GetUserDao().FindByPhoneFromDB(req.Identifier)
-	case "USERNAME":
+	case constants.VerifyTypeUsername:
 		user, err = dao.GetUserDao().FindByUsernameFromDB(req.Identifier)
 	default:
-		return nil, errors.New("无效的验证类型")
+		return nil, lumerrors.ErrInvalidVerifyType
 	}
 	if err != nil {
-		return nil, errors.New("用户不存在")
+		return nil, lumerrors.ErrUserNotFound
 	}
 	err = s.checkPassword(user, req.AuthCode)
 	if err != nil {
-		return nil, errors.New("密码错误")
+		return nil, lumerrors.ErrPasswordIncorrect
 	}
 	return user, nil
 }
@@ -90,23 +93,23 @@ func (s *userServiceImpl) handleAuthByVerifyCode(ctx context.Context, req *v1.Lo
 		err  error
 	)
 	switch req.VerifyType {
-	case "EMAIL":
+	case constants.VerifyTypeEmail:
 		user, err = dao.GetUserDao().FindByEmailFromDB(req.Identifier)
-	case "PHONE":
+	case constants.VerifyTypePhone:
 		user, err = dao.GetUserDao().FindByPhoneFromDB(req.Identifier)
 	default:
-		return nil, errors.New("无效的验证类型")
+		return nil, lumerrors.ErrInvalidVerifyType
 	}
 	if err != nil {
 		user, err = s.createUser(req.VerifyType, req.Identifier, "", req.DeviceFingerprint, req.UserAgent, req.IP)
 		if err != nil {
-			return nil, errors.New("用户不存在")
+			return nil, lumerrors.ErrUserNotFound
 		}
 	}
 	commonService := service.GetCommonService()
 	err = commonService.CheckVerifyCode(ctx, req.Identifier, req.VerifyType, req.AuthCode, "login")
 	if err != nil {
-		return nil, errors.New("验证码错误")
+		return nil, lumerrors.ErrVerifyCodeWrong
 	}
 	return user, nil
 }
@@ -118,7 +121,7 @@ func (s *userServiceImpl) handleAuthByThirdParty(ctx context.Context, req *v1.Lo
 	)
 	thirdPartyAdapter, ok := service.GetThirdPartyAdapter(req.VerifyType)
 	if !ok {
-		return nil, errors.New("不支持的第三方登录类型")
+		return nil, lumerrors.ErrThirdPartyNotSupported
 	}
 	thirdPartyUser, err := thirdPartyAdapter.FetchUserInfo(ctx, req.AccessToken, req.AuthCode)
 	if err != nil {
@@ -145,11 +148,11 @@ func (s *userServiceImpl) handleAuthByThirdParty(ctx context.Context, req *v1.Lo
 	if user == nil {
 		user, err = s.createUser(req.VerifyType, req.Identifier, "", req.DeviceFingerprint, req.UserAgent, req.IP)
 		if err != nil {
-			return nil, errors.New("创建用户失败")
+			return nil, lumerrors.ErrCreateUserFailed
 		}
 	}
 	if linkErr := s.linkThirdPartyUser(ctx, user.ID, thirdPartyUser); linkErr != nil {
-		// 创建关联失败不影响登录
+		logger.Warnf(ctx, "link third party user failed: %v", linkErr)
 	}
 
 	return user, nil
@@ -177,15 +180,15 @@ func (s *userServiceImpl) createUser(verifyType string, identifier string, passw
 	}
 	user := &model.User{}
 	switch verifyType {
-	case "EMAIL":
+	case constants.VerifyTypeEmail:
 		user.Email = identifier
-	case "PHONE":
+	case constants.VerifyTypePhone:
 		user.Phone = identifier
-	case "USERNAME":
+	case constants.VerifyTypeUsername:
 		user.Username = identifier
 	}
 	if user.Username == "" {
-		user.Username = "后续使用方法生成"
+		user.Username = "user_" + generate.UUID()
 	}
 	user.Nickname = user.Username
 	user.Password = string(hashedPassword)
@@ -207,12 +210,16 @@ func (s *userServiceImpl) LoginRecord(ctx context.Context, req *model.LoginRecor
 		Status:            req.Status,
 		Device:            req.Device,
 	}
-	_, _ = dao.GetLoginHistoryDao().Create(loginHistory)
+	if _, err := dao.GetLoginHistoryDao().Create(loginHistory); err != nil {
+		logger.Errorf(ctx, "failed to record login history: %v", err)
+	}
 
 	s.markTrustedDevice(req.UserID, req.Device, req.DeviceFingerprint, req.IP, location)
 }
 
 func (s *userServiceImpl) getLocationByIP(ctx context.Context, ip string) string {
+	// TODO: implement IP geolocation (planned feature)
+	// Currently returns empty string until geolocation service is integrated
 	return ""
 }
 
@@ -232,12 +239,16 @@ func (s *userServiceImpl) markTrustedDevice(userID uint, deviceName, deviceFinge
 			LastLoginTime:     time.Now(),
 			LastLoginLocation: location,
 		}
-		_, _ = dao.GetTrustedDeviceDao().Create(newDevice)
+		if _, err := dao.GetTrustedDeviceDao().Create(newDevice); err != nil {
+			logger.Errorf(context.Background(), "failed to create trusted device: %v", err)
+		}
 	} else {
 		device.LastLoginTime = time.Now()
 		device.LastLoginIP = ip
 		device.LastLoginLocation = location
-		_, _ = dao.GetTrustedDeviceDao().Update(device)
+		if _, err := dao.GetTrustedDeviceDao().Update(device); err != nil {
+			logger.Errorf(context.Background(), "failed to update trusted device: %v", err)
+		}
 	}
 }
 
@@ -252,7 +263,7 @@ func (s *userServiceImpl) detectTrustedDevice(userID uint, deviceFingerprint str
 func (s *userServiceImpl) checkPassword(user *model.User, password string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return errors.New("密码错误")
+		return lumerrors.ErrPasswordIncorrect
 	}
 	return nil
 }
@@ -260,7 +271,7 @@ func (s *userServiceImpl) checkPassword(user *model.User, password string) error
 func (s *userServiceImpl) GetUserInfo(userID uint) (*model.User, error) {
 	user, err := dao.GetUserDao().FindByID(userID)
 	if err != nil {
-		return nil, errors.New("用户不存在")
+		return nil, lumerrors.ErrUserNotFound
 	}
 	return user, nil
 }
@@ -268,7 +279,7 @@ func (s *userServiceImpl) GetUserInfo(userID uint) (*model.User, error) {
 func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone string, avatar string) (*model.User, error) {
 	user, err := dao.GetUserDao().FindByID(userID)
 	if err != nil {
-		return nil, errors.New("用户不存在")
+		return nil, lumerrors.ErrUserNotFound
 	}
 
 	if nickname != "" {
@@ -283,7 +294,7 @@ func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone str
 
 	user, err = dao.GetUserDao().Update(user)
 	if err != nil {
-		return nil, errors.New("更新用户信息失败")
+		return nil, lumerrors.ErrUpdateUserFailed
 	}
 
 	return user, nil
@@ -292,29 +303,29 @@ func (s *userServiceImpl) UpdateUserInfo(userID uint, nickname string, phone str
 func (s *userServiceImpl) ChangePassword(userID uint, oldPassword string, newPassword string) error {
 	user, err := dao.GetUserDao().FindByID(userID)
 	if err != nil {
-		return errors.New("用户不存在")
+		return lumerrors.ErrUserNotFound
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
-		return errors.New("旧密码错误")
+		return lumerrors.ErrOldPasswordWrong
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return errors.New("密码加密失败")
+		return lumerrors.ErrPasswordHashFailed
 	}
 
 	user.Password = string(hashedPassword)
 	_, err = dao.GetUserDao().Update(user)
 	if err != nil {
-		return errors.New("更新密码失败")
+		return lumerrors.ErrUpdatePasswordFail
 	}
 
 	return nil
 }
 
 func (s *userServiceImpl) Register(ctx context.Context, req *v1.RegisterRequest) (res *v1.RegisterResponse, err error) {
-	if req.AuthType == "VERIFY_CODE" {
+	if req.AuthType == constants.AuthTypeVerifyCode {
 		commonService := service.GetCommonService()
 		if err := commonService.CheckVerifyCode(ctx, req.Identifier, req.VerifyType, req.AuthCode, "register"); err != nil {
 			return nil, err
@@ -323,17 +334,17 @@ func (s *userServiceImpl) Register(ctx context.Context, req *v1.RegisterRequest)
 
 	var existingUser *model.User
 	switch req.VerifyType {
-	case "USERNAME":
+	case constants.VerifyTypeUsername:
 		existingUser, err = dao.GetUserDao().FindByUsername(req.Identifier)
-	case "EMAIL":
+	case constants.VerifyTypeEmail:
 		existingUser, err = dao.GetUserDao().FindByEmail(req.Identifier)
-	case "PHONE":
+	case constants.VerifyTypePhone:
 		existingUser, err = dao.GetUserDao().FindByPhone(req.Identifier)
 	default:
-		return nil, errors.New("无效的验证类型")
+		return nil, lumerrors.ErrInvalidVerifyType
 	}
 	if err == nil && existingUser != nil {
-		return nil, errors.New("用户已存在")
+		return nil, lumerrors.ErrUserAlreadyExists
 	}
 
 	user, err := s.createUser(req.VerifyType, req.Identifier, req.Password, req.DeviceFingerprint, req.UserAgent, req.IP)
@@ -352,24 +363,24 @@ func (s *userServiceImpl) ResetPassword(email string, verifyCode string, newPass
 	ctx := context.Background()
 
 	commonService := service.GetCommonService()
-	if err := commonService.CheckVerifyCode(ctx, email, "EMAIL", verifyCode, "reset"); err != nil {
+	if err := commonService.CheckVerifyCode(ctx, email, constants.VerifyTypeEmail, verifyCode, "reset"); err != nil {
 		return err
 	}
 
 	user, err := dao.GetUserDao().FindByEmail(email)
 	if err != nil {
-		return errors.New("用户不存在")
+		return lumerrors.ErrUserNotFound
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return errors.New("密码加密失败")
+		return lumerrors.ErrPasswordHashFailed
 	}
 
 	user.Password = string(hashedPassword)
 	_, err = dao.GetUserDao().Update(user)
 	if err != nil {
-		return errors.New("重置密码失败")
+		return lumerrors.ErrResetPasswordFail
 	}
 
 	return nil
@@ -380,18 +391,20 @@ func (s *userServiceImpl) SendResetPasswordCode(email string) error {
 
 	_, err := dao.GetUserDao().FindByEmail(email)
 	if err != nil {
-		return errors.New("用户不存在")
+		return lumerrors.ErrUserNotFound
 	}
 
 	commonService := service.GetCommonService()
 	req := &model.SendVerifyCodeRequest{
 		Identifier: email,
-		VerifyType: "EMAIL",
+		VerifyType: constants.VerifyTypeEmail,
 		Action:     "reset",
 	}
 	return commonService.SendVerifyCode(ctx, req)
 }
 
 func (s *userServiceImpl) detectDifferentLocation(userID uint, ip string) bool {
+	// TODO: implement IP geolocation detection (planned feature)
+	// Currently returns true as a safe default until geolocation service is integrated
 	return true
 }

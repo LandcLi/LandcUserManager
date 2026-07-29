@@ -1,0 +1,32 @@
+# Refer to golangci-lint's configuration documentation for more details
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck       # 检查未处理的错误
+    - gosimple       # 简化代码
+    - govet          # go vet
+    - ineffassign    # 检查无效赋值
+    - staticcheck    # 静态检查
+    - unused         # 检查未使用代码
+    - misspell       # 拼写检查
+    - gofmt          # 格式化检查
+    - whitespace     # 空白检查
+  disable:
+    - scopelint  # deprecated
+
+linters-settings:
+  errcheck:
+    ignore: fmt:Fprintf,io:Copy,io:WriteString
+  misspell:
+    locale: US
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck

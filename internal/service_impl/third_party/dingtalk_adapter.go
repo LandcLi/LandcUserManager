@@ -3,12 +3,13 @@ package third_party
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/LandcLi/LandcUserManager/model"
+	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	"github.com/LandcLi/LandcUserManager/service"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
 )
@@ -36,14 +37,14 @@ func (a *dingtalkAdapter) FetchUserInfo(ctx context.Context, accessToken, verify
 	reqJSON, err := json.Marshal(reqBody)
 	if err != nil {
 		logger.Errorf(ctx, "构建钉钉用户信息请求失败: %v", err)
-		return nil, errors.New("构建请求失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrBuildRequestFailed, err)
 	}
 
 	// 创建请求
 	req, err := http.NewRequest("POST", userInfoURL, strings.NewReader(string(reqJSON)))
 	if err != nil {
 		logger.Errorf(ctx, "创建钉钉用户信息请求失败: %v", err)
-		return nil, errors.New("创建请求失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrCreateRequestFailed, err)
 	}
 
 	// 设置请求头
@@ -55,7 +56,7 @@ func (a *dingtalkAdapter) FetchUserInfo(ctx context.Context, accessToken, verify
 	userInfoResp, err := client.Do(req)
 	if err != nil {
 		logger.Errorf(ctx, "获取钉钉用户信息失败: %v", err)
-		return nil, errors.New("获取钉钉用户信息失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrFetchUserInfoFailed, err)
 	}
 	defer userInfoResp.Body.Close()
 
@@ -72,12 +73,12 @@ func (a *dingtalkAdapter) FetchUserInfo(ctx context.Context, accessToken, verify
 
 	if err := json.NewDecoder(userInfoResp.Body).Decode(&userInfoData); err != nil {
 		logger.Errorf(ctx, "解析钉钉用户信息响应失败: %v", err)
-		return nil, errors.New("解析钉钉用户信息响应失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrParseResponseFailed, err)
 	}
 
 	if userInfoData.Errcode != 0 {
 		logger.Errorf(ctx, "钉钉API错误: %d, %s", userInfoData.Errcode, userInfoData.Errmsg)
-		return nil, errors.New("钉钉API错误: " + userInfoData.Errmsg)
+		return nil, fmt.Errorf("dingtalk %s%s", lumerrors.ErrAPIError, userInfoData.Errmsg)
 	}
 
 	return &model.ThirdPartyUser{

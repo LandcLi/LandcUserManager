@@ -3,11 +3,11 @@ package third_party
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/LandcLi/LandcUserManager/model"
+	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	"github.com/LandcLi/LandcUserManager/service"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
 )
@@ -33,7 +33,7 @@ func (a *githubAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 	userInfoReq, err := http.NewRequest("GET", userInfoURL, nil)
 	if err != nil {
 		logger.Errorf(ctx, "创建GitHub用户信息请求失败: %v", err)
-		return nil, errors.New("创建GitHub用户信息请求失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrCreateRequestFailed, err)
 	}
 
 	// 设置请求头
@@ -44,7 +44,7 @@ func (a *githubAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 	userInfoResp, err := client.Do(userInfoReq)
 	if err != nil {
 		logger.Errorf(ctx, "获取GitHub用户信息失败: %v", err)
-		return nil, errors.New("获取GitHub用户信息失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrFetchUserInfoFailed, err)
 	}
 	defer userInfoResp.Body.Close()
 
@@ -61,12 +61,12 @@ func (a *githubAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 
 	if err := json.NewDecoder(userInfoResp.Body).Decode(&userInfoData); err != nil {
 		logger.Errorf(ctx, "解析GitHub用户信息响应失败: %v", err)
-		return nil, errors.New("解析GitHub用户信息响应失败")
+		return nil, fmt.Errorf("%s: %w", lumerrors.ErrParseResponseFailed, err)
 	}
 
 	if userInfoData.Error != "" {
 		logger.Errorf(ctx, "GitHub API错误: %s", userInfoData.Error)
-		return nil, errors.New("GitHub API错误: " + userInfoData.Error)
+		return nil, fmt.Errorf("github %s%s", lumerrors.ErrAPIError, userInfoData.Error)
 	}
 
 	// 3. 如果email为空，尝试获取用户的公开邮箱
