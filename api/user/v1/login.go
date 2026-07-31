@@ -17,7 +17,9 @@ type LoginRequest struct {
 
 // LoginResponse 密码验证响应
 type LoginResponse struct {
-	UserID            uint `json:"userId"`
-	DifferentLocation bool `json:"differentLocation"`
-	IsNewDevice       bool `json:"isNewDevice"`
+	UserID            uint   `json:"userId"`
+	DifferentLocation bool   `json:"differentLocation"`
+	IsNewDevice       bool   `json:"isNewDevice"`
+	Token             string `json:"token"`
+	RefreshToken      string `json:"refreshToken"`
 }

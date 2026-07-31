@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/LandcLi/landc-go/frame/pkg/di"
+	"github.com/LandcLi/landc-go/frame/pkg/web"
 
 	userApi "github.com/LandcLi/LandcUserManager/api/user"
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
@@ -22,6 +23,17 @@ type userController struct {
 func NewUserController() *userController {
 	return &userController{}
 }
+
+// currentUserID 从 gin.Context 中读取 Auth 中间件注入的 UserID（JWT claims）
+// 业务一律使用该方法获取当前登录用户，禁止信任前端传参（防 IDOR 越权）
+func currentUserID(ctx context.Context) uint {
+	gc, ok := web.GinContextFromContext(ctx)
+	if !ok {
+		return 0
+	}
+	return gc.GetUint("UserID")
+}
+
 func (uc *userController) Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error) {
 	return service.GetUserService().Login(ctx, req)
 }
@@ -32,7 +44,7 @@ func (uc *userController) Register(ctx context.Context, req *v1.RegisterRequest)
 
 func (uc *userController) LoginRecord(ctx context.Context, req *v1.LoginRecordRequest) (*v1.LoginRecordResponse, error) {
 	serviceReq := &model.LoginRecordRequest{
-		UserID:            req.UserID,
+		UserID:            currentUserID(ctx),
 		VerifyType:        req.VerifyType,
 		Remark:            req.Remark,
 		IP:                req.IP,
@@ -48,7 +60,7 @@ func (uc *userController) LoginRecord(ctx context.Context, req *v1.LoginRecordRe
 }
 
 func (uc *userController) GetUserInfo(ctx context.Context, req *v1.GetUserInfoRequest) (*v1.GetUserInfoResponse, error) {
-	user, err := service.GetUserService().GetUserInfo(req.UserID)
+	user, err := service.GetUserService().GetUserInfo(currentUserID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +78,7 @@ func (uc *userController) GetUserInfo(ctx context.Context, req *v1.GetUserInfoRe
 }
 
 func (uc *userController) UpdateUserInfo(ctx context.Context, req *v1.UpdateUserInfoRequest) (*v1.UpdateUserInfoResponse, error) {
-	user, err := service.GetUserService().UpdateUserInfo(req.UserID, req.Nickname, req.Phone, req.Avatar)
+	user, err := service.GetUserService().UpdateUserInfo(currentUserID(ctx), req.Nickname, req.Phone, req.Avatar)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +96,7 @@ func (uc *userController) UpdateUserInfo(ctx context.Context, req *v1.UpdateUser
 }
 
 func (uc *userController) ChangePassword(ctx context.Context, req *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error) {
-	err := service.GetUserService().ChangePassword(req.UserID, req.OldPassword, req.NewPassword)
+	err := service.GetUserService().ChangePassword(currentUserID(ctx), req.OldPassword, req.NewPassword)
 	if err != nil {
 		return nil, err
 	}

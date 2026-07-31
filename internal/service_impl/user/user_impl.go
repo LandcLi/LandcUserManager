@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/LandcLi/landc-go/frame/pkg/di"
+	frameauth "github.com/LandcLi/landc-go/frame/pkg/auth"
 	"github.com/LandcLi/landc-go/tools/generate"
 
 	"golang.org/x/crypto/bcrypt"
@@ -14,6 +15,7 @@ import (
 	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/service"
+	"github.com/LandcLi/LandcUserManager/utility/crypto"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
 
 	constants "github.com/LandcLi/LandcUserManager/pkg/consts"
@@ -29,7 +31,7 @@ func NewUserServiceImpl() *userServiceImpl {
 	return &userServiceImpl{}
 }
 
-// Login 密码验证
+// Login 登录入口：认证成功后签发 JWT（access + refresh），并自动记录登录历史
 func (s *userServiceImpl) Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error) {
 	var (
 		user *model.User
@@ -55,11 +57,53 @@ func (s *userServiceImpl) Login(ctx context.Context, req *v1.LoginRequest) (*v1.
 	isNewDevice := s.detectTrustedDevice(user.ID, req.DeviceFingerprint)
 	isDifferentLocation := s.detectDifferentLocation(user.ID, req.IP)
 
+	// 签发 JWT
+	accessToken, refreshToken, err := s.issueTokens(user, req.IP, req.DeviceFingerprint)
+	if err != nil {
+		logger.Errorf(ctx, "签发 JWT 失败: %v", err)
+		return nil, lumerrors.ErrUserNotFound
+	}
+
+	// 自动记录登录历史（含信任设备管理）
+	s.LoginRecord(ctx, &model.LoginRecordRequest{
+		UserID:            user.ID,
+		IP:                req.IP,
+		DeviceFingerprint: req.DeviceFingerprint,
+		UserAgent:         req.UserAgent,
+		Status:            1,
+	})
+
 	return &v1.LoginResponse{
 		UserID:            user.ID,
 		DifferentLocation: isDifferentLocation,
 		IsNewDevice:       isNewDevice,
+		Token:             accessToken,
+		RefreshToken:      refreshToken,
 	}, nil
+}
+
+// issueTokens 签发 access token 与 refresh token
+func (s *userServiceImpl) issueTokens(user *model.User, ip, deviceFingerprint string) (string, string, error) {
+	access, err := frameauth.GenerateTokenWithOpts(user.ID, user.Username, frameauth.GenerateTokenOption{
+		IP:                ip,
+		DeviceFingerprint: deviceFingerprint,
+		TokenType:         "access",
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	refresh, err := frameauth.GenerateTokenWithOpts(user.ID, user.Username, frameauth.GenerateTokenOption{
+		IP:                ip,
+		DeviceFingerprint: deviceFingerprint,
+		TokenType:         "refresh",
+		ExpireTime:        30 * 24 * time.Hour, // refresh token 有效期 30 天
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	return access, refresh, nil
 }
 
 func (s *userServiceImpl) handleAuthByPassword(ctx context.Context, req *v1.LoginRequest) (*model.User, error) {
@@ -101,13 +145,11 @@ func (s *userServiceImpl) handleAuthByVerifyCode(ctx context.Context, req *v1.Lo
 		return nil, lumerrors.ErrInvalidVerifyType
 	}
 	if err != nil {
-		user, err = s.createUser(req.VerifyType, req.Identifier, "", req.DeviceFingerprint, req.UserAgent, req.IP)
-		if err != nil {
-			return nil, lumerrors.ErrUserNotFound
-		}
+		// 安全考虑：验证码登录不允许自动注册，防止验证码爆破自动批量开户
+		return nil, lumerrors.ErrUserNotFound
 	}
 	commonService := service.GetCommonService()
-	err = commonService.CheckVerifyCode(ctx, req.Identifier, req.VerifyType, req.AuthCode, "login")
+	err = commonService.CheckVerifyCode(ctx, req.Identifier, req.VerifyType, req.AuthCode, constants.ActionLogin)
 	if err != nil {
 		return nil, lumerrors.ErrVerifyCodeWrong
 	}
@@ -146,6 +188,7 @@ func (s *userServiceImpl) handleAuthByThirdParty(ctx context.Context, req *v1.Lo
 		user, err = dao.GetUserDao().FindByPhone(thirdPartyUser.Phone)
 	}
 	if user == nil {
+		// 第三方登录：首次登录自动创建用户（三方登录属于明确的用户授权行为）
 		user, err = s.createUser(req.VerifyType, req.Identifier, "", req.DeviceFingerprint, req.UserAgent, req.IP)
 		if err != nil {
 			return nil, lumerrors.ErrCreateUserFailed
@@ -159,14 +202,21 @@ func (s *userServiceImpl) handleAuthByThirdParty(ctx context.Context, req *v1.Lo
 }
 
 func (s *userServiceImpl) linkThirdPartyUser(ctx context.Context, userID uint, thirdPartyUser *model.ThirdPartyUser) error {
+	// AccessToken 加密后存储，避免明文泄露
+	encryptedToken, err := crypto.Encrypt(thirdPartyUser.AccessToken)
+	if err != nil {
+		logger.Warnf(ctx, "encrypt third party access token failed: %v", err)
+		encryptedToken = thirdPartyUser.AccessToken
+	}
+
 	newMeta := &model.ThirdPartyUserMeta{
 		UserID:      userID,
 		Provider:    thirdPartyUser.Provider,
 		OpenID:      thirdPartyUser.OpenID,
 		UnionID:     thirdPartyUser.UnionID,
-		AccessToken: thirdPartyUser.AccessToken,
+		AccessToken: encryptedToken,
 	}
-	_, err := dao.GetThirdPartyUserDao().Create(newMeta)
+	_, err = dao.GetThirdPartyUserDao().Create(newMeta)
 	return err
 }
 
@@ -327,7 +377,7 @@ func (s *userServiceImpl) ChangePassword(userID uint, oldPassword string, newPas
 func (s *userServiceImpl) Register(ctx context.Context, req *v1.RegisterRequest) (res *v1.RegisterResponse, err error) {
 	if req.AuthType == constants.AuthTypeVerifyCode {
 		commonService := service.GetCommonService()
-		if err := commonService.CheckVerifyCode(ctx, req.Identifier, req.VerifyType, req.AuthCode, "register"); err != nil {
+		if err := commonService.CheckVerifyCode(ctx, req.Identifier, req.VerifyType, req.AuthCode, constants.ActionRegister); err != nil {
 			return nil, err
 		}
 	}
@@ -354,8 +404,17 @@ func (s *userServiceImpl) Register(ctx context.Context, req *v1.RegisterRequest)
 
 	s.markTrustedDevice(user.ID, "", req.DeviceFingerprint, req.IP, "")
 
+	// 注册成功后直接签发 token，完成认证闭环
+	accessToken, refreshToken, err := s.issueTokens(user, req.IP, req.DeviceFingerprint)
+	if err != nil {
+		logger.Errorf(ctx, "签发 JWT 失败: %v", err)
+		return nil, lumerrors.ErrRegisterTokenFailed
+	}
+
 	return &v1.RegisterResponse{
-		UserID: user.ID,
+		UserID:       user.ID,
+		Token:        accessToken,
+		RefreshToken: refreshToken,
 	}, nil
 }
 
@@ -363,7 +422,7 @@ func (s *userServiceImpl) ResetPassword(email string, verifyCode string, newPass
 	ctx := context.Background()
 
 	commonService := service.GetCommonService()
-	if err := commonService.CheckVerifyCode(ctx, email, constants.VerifyTypeEmail, verifyCode, "reset"); err != nil {
+	if err := commonService.CheckVerifyCode(ctx, email, constants.VerifyTypeEmail, verifyCode, constants.ActionReset); err != nil {
 		return err
 	}
 
@@ -398,7 +457,7 @@ func (s *userServiceImpl) SendResetPasswordCode(email string) error {
 	req := &model.SendVerifyCodeRequest{
 		Identifier: email,
 		VerifyType: constants.VerifyTypeEmail,
-		Action:     "reset",
+		Action:     constants.ActionReset,
 	}
 	return commonService.SendVerifyCode(ctx, req)
 }

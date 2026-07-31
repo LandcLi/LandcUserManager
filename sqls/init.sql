@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `third_party_user_metas` (
   `provider` varchar(50) NOT NULL COMMENT '第三方提供商（wechat/dingtalk/github/alipay）',
   `open_id` varchar(100) NOT NULL COMMENT 'OpenID',
   `union_id` varchar(100) DEFAULT NULL COMMENT 'UnionID',
-  `access_token` varchar(255) DEFAULT NULL COMMENT '访问令牌',
+  `access_token` varchar(500) DEFAULT NULL COMMENT '访问令牌（AES-GCM 加密存储，base64 + enc: 前缀）',
   `created_at` datetime(3) DEFAULT NULL COMMENT '创建时间',
   `updated_at` datetime(3) DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`),

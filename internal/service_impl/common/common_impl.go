@@ -30,10 +30,8 @@ func init() {
 	di.Provide[service.CommonService]("common.service", NewCommonService())
 }
 
-// SendVerifyCode 发送验证码
+// SendVerifyCode 发送验证码（含发送间隔与每日次数限流）
 func (s *commonServiceImpl) SendVerifyCode(ctx context.Context, req *model.SendVerifyCodeRequest) error {
-	verifyCode := generate.MustCaptcha(6)
-
 	var key string
 	switch req.VerifyType {
 	case constants.VerifyTypeEmail:
@@ -50,9 +48,45 @@ func (s *commonServiceImpl) SendVerifyCode(ctx context.Context, req *model.SendV
 		return lumerrors.ErrVerifyCodeSendFailed
 	}
 
+	rate := config.GetConfig().RateLimit
+
+	// 限流：发送间隔内不允许重复发送
+	intervalKey := key + ":interval"
+	exists, err := c.Exists(ctx, intervalKey)
+	if err != nil {
+		logger.Warnf(ctx, "check verify code interval failed: %v", err)
+	} else if exists {
+		return lumerrors.ErrTooManyRequests
+	}
+
+	// 限流：每日发送次数上限
+	dayKey := key + ":daily"
+	dayCount, err := s.getDailyCount(ctx, c, dayKey)
+	if err != nil {
+		logger.Warnf(ctx, "check daily count failed: %v", err)
+	} else if rate.MaxVerifyCodePerDay > 0 && dayCount >= rate.MaxVerifyCodePerDay {
+		return lumerrors.ErrDailyLimitExceeded
+	}
+
+	verifyCode := generate.MustCaptcha(6)
+
 	if err := c.Set(ctx, key, verifyCode, 5*time.Minute); err != nil {
 		logger.Errorf(ctx, "存储验证码到缓存失败: %v", err)
 		return lumerrors.ErrVerifyCodeSendFailed
+	}
+
+	// 设置发送间隔标记
+	interval := time.Duration(rate.VerifyCodeInterval) * time.Second
+	if interval <= 0 {
+		interval = 60 * time.Second
+	}
+	if err := c.Set(ctx, intervalKey, "1", interval); err != nil {
+		logger.Warnf(ctx, "set verify code interval marker failed: %v", err)
+	}
+
+	// 更新每日计数（TTL 24 小时）
+	if err := s.incrementDailyCount(ctx, c, dayKey, dayCount); err != nil {
+		logger.Warnf(ctx, "update daily count failed: %v", err)
 	}
 
 	switch req.VerifyType {
@@ -74,6 +108,28 @@ func (s *commonServiceImpl) SendVerifyCode(ctx context.Context, req *model.SendV
 	}
 
 	return nil
+}
+
+// getDailyCount 读取当日已发送次数
+func (s *commonServiceImpl) getDailyCount(ctx context.Context, c interface {
+	Get(context.Context, string) (string, error)
+}, dayKey string) (int, error) {
+	v, err := c.Get(ctx, dayKey)
+	if err != nil || v == "" {
+		return 0, nil
+	}
+	var n int
+	if _, err := fmt.Sscanf(v, "%d", &n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+// incrementDailyCount 递增每日计数（基于 Get+Set，非原子；高并发下可能有误差，但不影响安全上限兜底）
+func (s *commonServiceImpl) incrementDailyCount(ctx context.Context, c interface {
+	Set(context.Context, string, interface{}, time.Duration) error
+}, dayKey string, current int) error {
+	return c.Set(ctx, dayKey, fmt.Sprintf("%d", current+1), 24*time.Hour)
 }
 
 // CheckVerifyCode 验证验证码

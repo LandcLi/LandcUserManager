@@ -1,13 +1,16 @@
-# 使用本地 Go 工具链（go1.24.9）
-GO ?= /Users/lizongbin/Desktop/lzb/go-version/go-1.24.9/go1.24.9/bin/go
-GOROOT ?= /Users/lizongbin/Desktop/lzb/go-version/go-1.24.9/go1.24.9
-GOENV = GOROOT=$(GOROOT) PATH="$(GOROOT)/bin:$(PATH)"
+# 项目 Makefile
+# Go 工具链：优先使用环境变量 GO/GOROOT 指定，默认使用 PATH 中的 go。
+# 工具链版本由 go.mod 的 toolchain 指令锁定（go1.24.9）。
+# 示例：make GO=/path/to/go GOROOT=/path/to/go
+
+GO ?= go
+GOENV := PATH="$(dir $(shell command -v $(GO) 2>/dev/null || echo $(GO)))$$PATH"
 
 APP_NAME = lum-server
 BUILD_DIR = ./build
 MAIN_PATH = .
 
-.PHONY: all build run test lint clean docker
+.PHONY: all build run test lint fmt clean docker tools
 
 all: lint test build
 

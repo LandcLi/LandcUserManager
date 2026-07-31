@@ -1,14 +1,24 @@
 # 服务器配置
 server:
-  port: 8080
+  port: 18081
   addr: "0.0.0.0"
   read_timeout: 30
   write_timeout: 30
+  use_default_routes: true
+  health_check:
+    enabled: true
+    liveness_path: "/health"
+    readiness_path: "/ready"
+    database_check: true
+    redis_check: false
+  security_headers:
+    enabled: true
+  request_timeout: 30
 
-# 数据库配置
+# 数据库配置（生产环境请使用环境变量注入，勿明文提交）
 database:
   driver: "mysql"
-  dsn: "user:password@tcp(127.0.0.1:3306)/user_manager?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: "user:password@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
   max_idle_conns: 10
   max_open_conns: 100
   conn_max_lifetime: 3600
@@ -25,18 +35,17 @@ redis:
   read_timeout: 3
   write_timeout: 3
 
-# JWT配置
+# JWT配置（框架标准字段）
+# secret 长度必须 >= 32 字符，生产环境通过环境变量 LANDC_JWT_SECRET 注入更安全
 jwt:
-  secret_key: "your-secret-key-here"
-  private_key_path: ""
-  public_key_path: ""
-  expires_in: 7200
-  refresh_in: 2592000
+  secret: "replace-with-a-strong-secret-key-at-least-32-chars"
+  expire_time: "2h"
+  issuer: "landc-user-manager"
 
-# 邮件配置
+# 邮件配置（字段与 mail.Config 对齐：smtp_host/smtp_port）
 email:
-  host: "smtp.example.com"
-  port: 587
+  smtp_host: "smtp.example.com"
+  smtp_port: 587
   username: "your-email@example.com"
   password: "your-password"
   from: "your-email@example.com"
@@ -50,8 +59,8 @@ sms:
 
 # 日志配置
 logger:
-  provider: "console"
-  level: 1
+  provider: "file"
+  level: "info"
   format: "json"
   outputPath: "./logs"
 
@@ -78,8 +87,8 @@ login_history:
 
 # 限流配置
 rate_limit:
-  verify_code_interval: 60
-  max_verify_code_per_day: 10
+  verify_code_interval: 60    # 发送验证码最小间隔（秒）
+  max_verify_code_per_day: 10 # 每日发送验证码上限
 
 # 第三方登录配置
 third_party:

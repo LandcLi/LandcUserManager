@@ -21,6 +21,13 @@ var (
 	ErrPasswordHashFailed = errors.New("password hash failed")
 	ErrUpdatePasswordFail = errors.New("update password failed")
 	ErrResetPasswordFail  = errors.New("reset password failed")
+	ErrRegisterTokenFailed = errors.New("register token generation failed")
+)
+
+// ---- 限流相关错误 ----
+var (
+	ErrTooManyRequests       = errors.New("too many requests, please retry later")
+	ErrDailyLimitExceeded    = errors.New("daily verify code limit exceeded")
 )
 
 // ---- 验证码相关错误 ----

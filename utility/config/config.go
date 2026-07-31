@@ -9,9 +9,10 @@ import (
 
 // ---- 类型定义（仅供业务代码类型化访问） ----
 // 实际配置加载由框架全权负责，GetConfig() 从框架 Config 中提取并转回类型化结构。
+// 字段 json tag 必须与 config.yaml 中的 key 对应（UnmarshalOther 基于 JSON 中转）。
 
 type ThirdPartyGlobalConfig struct {
-	ThirdParty map[string]map[string]interface{} `yaml:"third_party"`
+	ThirdParty map[string]map[string]interface{} `yaml:"third_party" json:"third_party"`
 }
 
 type Config struct {
@@ -58,37 +59,35 @@ type RedisConfig struct {
 	WriteTimeout int
 }
 type JWTConfig struct {
-	SecretKey      string
-	PrivateKeyPath string
-	PublicKeyPath  string
-	ExpiresIn      int
-	RefreshIn      int
+	Secret     string `yaml:"secret" json:"secret"`
+	ExpireTime string `yaml:"expire_time" json:"expire_time"`
+	Issuer     string `yaml:"issuer" json:"issuer"`
 }
 type SMSConfig struct {
-	ApiKey    string
-	ApiSecret string
-	SignName  string
-	Template  string
+	ApiKey    string `yaml:"api_key" json:"api_key"`
+	ApiSecret string `yaml:"api_secret" json:"api_secret"`
+	SignName  string `yaml:"sign_name" json:"sign_name"`
+	Template  string `yaml:"template" json:"template"`
 }
 type CacheConfig struct {
-	UserCacheExpire int
+	UserCacheExpire int `yaml:"user_cache_expire" json:"user_cache_expire"`
 }
 type PasswordConfig struct {
-	BcryptCost int
+	BcryptCost int `yaml:"bcrypt_cost" json:"bcrypt_cost"`
 }
 type VerifyCodeConfig struct {
-	Length     int
-	ExpireTime int
+	Length     int `yaml:"length" json:"length"`
+	ExpireTime int `yaml:"expire_time" json:"expire_time"`
 }
 type HTTPClientConfig struct {
-	Timeout int
+	Timeout int `yaml:"timeout" json:"timeout"`
 }
 type LoginHistoryConfig struct {
-	RetentionDays int
+	RetentionDays int `yaml:"retention_days" json:"retention_days"`
 }
 type RateLimitConfig struct {
-	VerifyCodeInterval  int
-	MaxVerifyCodePerDay int
+	VerifyCodeInterval  int `yaml:"verify_code_interval" json:"verify_code_interval"`
+	MaxVerifyCodePerDay int `yaml:"max_verify_code_per_day" json:"max_verify_code_per_day"`
 }
 
 // GetConfig 从框架全局配置中提取 LUM 类型化配置。
@@ -117,19 +116,18 @@ func extractLUMConfig(fc *frameconfig.Config) *Config {
 		},
 	}
 
-	if fc.Other != nil {
-		cfg.JWT, _ = fc.Other["jwt"].(JWTConfig)
-		cfg.Email, _ = fc.Other["email"].(client.EmailConfig)
-		cfg.SMS, _ = fc.Other["sms"].(SMSConfig)
-		cfg.Log, _ = fc.Other["log"].(facade.LogConfig)
-		cfg.Cache, _ = fc.Other["cache"].(CacheConfig)
-		cfg.Password, _ = fc.Other["password"].(PasswordConfig)
-		cfg.VerifyCode, _ = fc.Other["verify_code"].(VerifyCodeConfig)
-		cfg.HTTPClient, _ = fc.Other["http_client"].(HTTPClientConfig)
-		cfg.LoginHistory, _ = fc.Other["login_history"].(LoginHistoryConfig)
-		cfg.RateLimit, _ = fc.Other["rate_limit"].(RateLimitConfig)
-		cfg.ThirdParty, _ = fc.Other["third_party"].(ThirdPartyGlobalConfig)
-	}
+	// 自定义配置通过 UnmarshalOther 类型化（基于 JSON 中转）
+	_ = fc.UnmarshalOther("jwt", &cfg.JWT)
+	_ = fc.UnmarshalOther("email", &cfg.Email)
+	_ = fc.UnmarshalOther("sms", &cfg.SMS)
+	_ = fc.UnmarshalOther("log", &cfg.Log)
+	_ = fc.UnmarshalOther("cache", &cfg.Cache)
+	_ = fc.UnmarshalOther("password", &cfg.Password)
+	_ = fc.UnmarshalOther("verify_code", &cfg.VerifyCode)
+	_ = fc.UnmarshalOther("http_client", &cfg.HTTPClient)
+	_ = fc.UnmarshalOther("login_history", &cfg.LoginHistory)
+	_ = fc.UnmarshalOther("rate_limit", &cfg.RateLimit)
+	_ = fc.UnmarshalOther("third_party", &cfg.ThirdParty)
 
 	return cfg
 }

@@ -72,6 +72,9 @@ require (
 	gorm.io/driver/sqlite v1.6.0 // indirect
 )
 
+// NOTE: landc-go 为作者维护的基础框架，计划由作者于近期开源发布。
+// 开源后将移除下方 replace 指令，改为直接引用远程模块版本（github.com/LandcLi/landc-go/...）。
+// 在发布之前，构建依赖 ../landc-go 本地目录（与 CI 的 clone 策略保持一致）。
 replace (
 	github.com/LandcLi/landc-go/api => ../landc-go/api
 	github.com/LandcLi/landc-go/frame => ../landc-go/frame

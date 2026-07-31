@@ -54,7 +54,7 @@ type LoginRecordRequest struct {
 type SendVerifyCodeRequest struct {
 	Identifier string `json:"identifier" binding:"required,min=3,max=50"`
 	VerifyType string `json:"verifyType" binding:"required,oneof=EMAIL PHONE"`
-	Action     string `json:"action" binding:"required,oneof=LOGIN REGISTER"`
+	Action     string `json:"action" binding:"required,oneof=login register reset"`
 }
 
 // VerifyCodeLoginRequest 验证码登录请求

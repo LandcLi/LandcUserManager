@@ -17,5 +17,7 @@ type RegisterRequest struct {
 
 // RegisterResponse 注册响应
 type RegisterResponse struct {
-	UserID uint `json:"userId"`
+	UserID       uint   `json:"userId"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refreshToken"`
 }

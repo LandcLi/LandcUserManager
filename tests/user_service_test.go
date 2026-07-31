@@ -50,6 +50,12 @@ func TestLoginPasswordByUsername_Success(t *testing.T) {
 	if resp.UserID == 0 {
 		t.Fatal("expected non-zero UserID")
 	}
+	if resp.Token == "" {
+		t.Fatal("expected JWT token in login response")
+	}
+	if resp.RefreshToken == "" {
+		t.Fatal("expected refresh token in login response")
+	}
 }
 
 func TestLoginPasswordByEmail_Success(t *testing.T) {
@@ -179,6 +185,9 @@ func TestLoginVerifyCode_ExistingUser_Success(t *testing.T) {
 	if resp.UserID == 0 {
 		t.Fatal("expected non-zero UserID")
 	}
+	if resp.Token == "" {
+		t.Fatal("expected JWT token for verify-code login")
+	}
 }
 
 func TestLoginVerifyCode_WrongCode(t *testing.T) {
@@ -197,11 +206,11 @@ func TestLoginVerifyCode_WrongCode(t *testing.T) {
 	}
 }
 
-func TestLoginVerifyCode_AutoCreateUser(t *testing.T) {
+func TestLoginVerifyCode_UserNotFound_NoAutoCreate(t *testing.T) {
 	reset()
 	mockCommonService.VerifyCode = "654321"
 
-	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
+	_, err := getUserService().Login(context.Background(), &v1.LoginRequest{
 		Identifier:        "newuser@example.com",
 		AuthCode:          "654321",
 		AuthType:          constants.AuthTypeVerifyCode,
@@ -210,19 +219,12 @@ func TestLoginVerifyCode_AutoCreateUser(t *testing.T) {
 		UserAgent:         "test-agent",
 		IP:                "127.0.0.1",
 	})
-	if err != nil {
-		t.Fatalf("Login auto-create failed: %v", err)
+	if err == nil || !errors.Is(err, lumerrors.ErrUserNotFound) {
+		t.Fatalf("expected ErrUserNotFound (no auto-create), got: %v", err)
 	}
-	if resp.UserID == 0 {
-		t.Fatal("expected non-zero UserID after auto-create")
-	}
-	// Verify user was created
-	user, err := mockUserDao.FindByEmail("newuser@example.com")
-	if err != nil {
-		t.Fatal("expected user to be auto-created")
-	}
-	if user.Username == "" {
-		t.Fatal("expected non-empty username")
+	// Verify user was NOT created
+	if _, err := mockUserDao.FindByEmail("newuser@example.com"); err == nil {
+		t.Fatal("expected no user to be auto-created on verify-code login")
 	}
 }
 
@@ -254,6 +256,9 @@ func TestLoginThirdParty_MatchByOpenID(t *testing.T) {
 	}
 	if resp.UserID != user.ID {
 		t.Fatalf("expected user ID %d, got %d", user.ID, resp.UserID)
+	}
+	if resp.Token == "" {
+		t.Fatal("expected JWT token for third-party login")
 	}
 }
 
@@ -360,6 +365,9 @@ func TestRegister_Success(t *testing.T) {
 	}
 	if resp.UserID == 0 {
 		t.Fatal("expected non-zero UserID")
+	}
+	if resp.Token == "" {
+		t.Fatal("expected JWT token in register response")
 	}
 }
 
