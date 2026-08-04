@@ -19,10 +19,6 @@ jobs:
           go-version: "1.26"
           cache: true
 
-      - name: Check landc-go dependency
-        run: |
-          git clone https://github.com/LandcLi/landc-go.git ../landc-go
-
       - name: Run go vet
         run: go vet ./...
 
@@ -39,10 +35,6 @@ jobs:
           go-version: "1.26"
           cache: true
 
-      - name: Check landc-go dependency
-        run: |
-          git clone https://github.com/LandcLi/landc-go.git ../landc-go
-
       - name: Run Tests
         run: go test -v -race -count=1 ./...
 
@@ -58,10 +50,6 @@ jobs:
         with:
           go-version: "1.26"
           cache: true
-
-      - name: Check landc-go dependency
-        run: |
-          git clone https://github.com/LandcLi/landc-go.git ../landc-go
 
       - name: Build
         run: go build -ldflags="-s -w" -o build/server .

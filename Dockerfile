@@ -1,16 +1,13 @@
 # ==================== Build Stage ====================
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /build
 
-# 缓存依赖层
+# 缓存依赖层（landc-go 依赖线上 v0.5.0，无需本地模块）
 COPY go.mod go.sum ./
 RUN go mod download
-
-# 复制 replace 所需的本地模块
-COPY ../landc-go /build/landc-go
 
 # 复制源码
 COPY . .

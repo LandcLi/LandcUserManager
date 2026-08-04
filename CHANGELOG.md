@@ -47,6 +47,8 @@
 
 ### Changed
 - Go 工具链升级至 `go 1.26` + `toolchain go1.26.5`（landc-go v0.5.0 要求）
-- landc-go 依赖版本统一至 `v0.5.0`（replace 指令在 v0.5.0 正式发布后移除）
-- GitHub Actions 各阶段 go-version 升级至 `1.26`
+- landc-go 依赖统一至线上 `v0.5.0`，**移除本地 replace**（landc-go 已于 2026-08-04 公开发布）
+- 后续 landc-go 更新走正常版本发布，通过 `go get -u` 升级
+- GitHub Actions 各阶段 go-version 升级至 `1.26`，移除本地 landc-go clone 步骤
+- Dockerfile 升级至 `golang:1.26-alpine`，移除本地 landc-go 复制步骤
 - 依赖随 landc-go 一并升级，修复已知 CVE
