@@ -1,6 +1,6 @@
 # 项目 Makefile
 # Go 工具链：优先使用环境变量 GO/GOROOT 指定，默认使用 PATH 中的 go。
-# 工具链版本由 go.mod 的 toolchain 指令锁定（go1.24.9）。
+# 工具链版本由 go.mod 的 toolchain 指令锁定（go1.26.5）。
 # 示例：make GO=/path/to/go GOROOT=/path/to/go
 
 GO ?= go

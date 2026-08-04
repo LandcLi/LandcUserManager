@@ -42,3 +42,11 @@
 - 登录/注册/敏感接口不再信任前端传入的 UserID（防 IDOR）
 - 第三方 AccessToken 不再明文入库
 - JWT 密钥强度校验（>= 32 字符）
+
+## [Unreleased - v0.5.0 适配]
+
+### Changed
+- Go 工具链升级至 `go 1.26` + `toolchain go1.26.5`（landc-go v0.5.0 要求）
+- landc-go 依赖版本统一至 `v0.5.0`（replace 指令在 v0.5.0 正式发布后移除）
+- GitHub Actions 各阶段 go-version 升级至 `1.26`
+- 依赖随 landc-go 一并升级，修复已知 CVE
