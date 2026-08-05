@@ -1,14 +1,3 @@
-// Package serverlib 提供 LandcUserManager 的库模式（in-process）入口。
-//
-// 下游服务可通过一行调用 RegisterToRouter 复用本服务的默认实现：
-//
-//	import "github.com/LandcLi/LandcUserManager/serverlib"
-//
-//	s := web.New()
-//	if err := serverlib.RegisterToRouter(s); err != nil { ... }
-//	s.Run()
-//
-// 入口只装配、不接管：不创建 engine、不调用 Run，调用方可继续追加自有路由。
 package serverlib
 
 import (
@@ -45,14 +34,9 @@ func WithWebOptions(opts ...web.RegisterOption) Option {
 	return func(o *options) { o.webOpts = append(o.webOpts, opts...) }
 }
 
-// RegisterToRouter 装配 LUM 默认实现并注册到 server。
-//
-// 前置条件：宿主进程已完成 landc-go 框架 bootstrap（配置/DB/缓存/JWT），
-// 可调用 frameconfig.InitGlobalConfigWithPath / InitGlobalConfigWithDefault，
-// 或经 landc-go cmd 框架（cmd.NewCommand）初始化。
-//
-// 行为与独立部署（internal/cmd）一致：默认装配全局鉴权中间件、
-// 初始化第三方登录适配器、注册 common 与 user 控制器。
+// RegisterToRouter 装配 user 服务的默认实现并注册到 server。
+// 只装配、不接管：不创建 engine、不调用 Run；调用方可继续追加自有路由。
+// 前置条件：宿主进程已完成 landc-go 框架 bootstrap（配置/DB/缓存/JWT）。
 func RegisterToRouter(s *web.Server, opts ...Option) error {
 	o := &options{authEnabled: true}
 	for _, opt := range opts {
@@ -64,16 +48,17 @@ func RegisterToRouter(s *web.Server, opts ...Option) error {
 		return fmt.Errorf("serverlib: framework not bootstrapped; initialize global config first")
 	}
 
-	// 全局鉴权中间件：必须在 RegisterHandler 之前挂载（与独立部署一致）
+	// 补全（相对 gen lib 骨架）：全局鉴权中间件，必须在 RegisterHandler 之前挂载（与独立部署一致）
 	if o.authEnabled {
 		s.Engine().Use(middleware.Auth())
 	}
 
-	// 第三方登录适配器初始化
+	// 补全（相对 gen lib 骨架）：第三方登录适配器初始化
 	if err := service.InitWithConfig(&config.GetConfig().ThirdParty); err != nil {
 		return fmt.Errorf("serverlib: init third-party adapters: %w", err)
 	}
 
+	// 控制器清单（gen lib 提示补全）：common + user
 	if err := s.RegisterHandler(common.GetCommonController(), o.webOpts...); err != nil {
 		return err
 	}
