@@ -73,3 +73,12 @@ require (
 // NOTE: landc-go v0.5.0 已于 2026-08-04 公开发布，
 // 本项目直接引用线上模块版本，不再使用本地 replace。
 // 后续 landc-go 更新请通过 go get -u 正常升级。
+
+// 开发期临时 replace：验证 landc-go dev 分支的未发布 API（需求 1/2/4/6，库模式入口），
+// 待 landc-go v0.6.0 发布后移除，切换回远程版本。
+replace (
+	github.com/LandcLi/landc-go/api => ../landc-go/api
+	github.com/LandcLi/landc-go/frame => ../landc-go/frame
+	github.com/LandcLi/landc-go/log => ../landc-go/log
+	github.com/LandcLi/landc-go/tools => ../landc-go/tools
+)
