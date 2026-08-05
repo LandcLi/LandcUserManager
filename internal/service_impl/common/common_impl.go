@@ -42,7 +42,7 @@ func (s *commonServiceImpl) SendVerifyCode(ctx context.Context, req *model.SendV
 		return lumerrors.ErrInvalidVerifyType
 	}
 
-	c := framecache.GetCache()
+	c := framecache.GetCacheFrom(ctx)
 	if c == nil {
 		logger.Errorf(ctx, "缓存未初始化")
 		return lumerrors.ErrVerifyCodeSendFailed
@@ -95,13 +95,13 @@ func (s *commonServiceImpl) SendVerifyCode(ctx context.Context, req *model.SendV
 		if mailClient == nil {
 			return lumerrors.ErrMailClientNotInit
 		}
-		err := s.sendMail(req.Identifier, "验证码", fmt.Sprintf("您的验证码是: %s，5分钟内有效", verifyCode))
+		err := s.sendMail(ctx, req.Identifier, "验证码", fmt.Sprintf("您的验证码是: %s，5分钟内有效", verifyCode))
 		if err != nil {
 			logger.Errorf(ctx, "发送邮件验证码失败: %v", err)
 			return lumerrors.ErrVerifyCodeSendFailed
 		}
 	case constants.VerifyTypePhone:
-		if err := s.sendSMS(req.Identifier, verifyCode); err != nil {
+		if err := s.sendSMS(ctx, req.Identifier, verifyCode); err != nil {
 			logger.Errorf(ctx, "发送短信验证码失败: %v", err)
 			return lumerrors.ErrVerifyCodeSendFailed
 		}
@@ -144,7 +144,7 @@ func (s *commonServiceImpl) CheckVerifyCode(ctx context.Context, identifier stri
 		return lumerrors.ErrInvalidVerifyType
 	}
 
-	c := framecache.GetCache()
+	c := framecache.GetCacheFrom(ctx)
 	if c == nil {
 		logger.Errorf(ctx, "缓存未初始化")
 		return lumerrors.ErrVerifyCodeVerifyFailed
@@ -167,7 +167,7 @@ func (s *commonServiceImpl) CheckVerifyCode(ctx context.Context, identifier stri
 	return nil
 }
 
-func (s *commonServiceImpl) sendMail(to string, subject string, body string) error {
+func (s *commonServiceImpl) sendMail(ctx context.Context, to string, subject string, body string) error {
 	mailClient := client.GetMailClient()
 	if mailClient == nil {
 		return lumerrors.ErrMailClientNotInit
@@ -181,11 +181,11 @@ func (s *commonServiceImpl) sendMail(to string, subject string, body string) err
 	})
 }
 
-func (s *commonServiceImpl) sendSMS(phone string, code string) error {
+func (s *commonServiceImpl) sendSMS(ctx context.Context, phone string, code string) error {
 	if config.GetConfig() == nil || config.GetConfig().SMS.ApiKey == "" {
 		return lumerrors.ErrSMSConfigNotSet
 	}
 	// TODO: implement SMS sending logic (planned feature)
-	logger.Infof(context.Background(), "SMS sending not yet implemented: phone=%s, code=%s", phone, code)
+	logger.Infof(ctx, "SMS sending not yet implemented: phone=%s, code=%s", phone, code)
 	return nil
 }

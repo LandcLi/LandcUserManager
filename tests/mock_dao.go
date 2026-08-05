@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -36,7 +37,7 @@ func (m *MockUserDao) Reset() {
 	clear(m.byPH)
 }
 
-func (m *MockUserDao) Create(user *model.User) (*model.User, error) {
+func (m *MockUserDao) Create(ctx context.Context, user *model.User) (*model.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	// auto-assign ID
@@ -59,7 +60,7 @@ func (m *MockUserDao) Create(user *model.User) (*model.User, error) {
 	return user, nil
 }
 
-func (m *MockUserDao) FindByID(id uint) (*model.User, error) {
+func (m *MockUserDao) FindByID(ctx context.Context, id uint) (*model.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	u, ok := m.users[id]
@@ -69,7 +70,7 @@ func (m *MockUserDao) FindByID(id uint) (*model.User, error) {
 	return u, nil
 }
 
-func (m *MockUserDao) FindByUsername(username string) (*model.User, error) {
+func (m *MockUserDao) FindByUsername(ctx context.Context, username string) (*model.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	u, ok := m.byUN[username]
@@ -79,19 +80,19 @@ func (m *MockUserDao) FindByUsername(username string) (*model.User, error) {
 	return u, nil
 }
 
-func (m *MockUserDao) FindByUsernameFromDB(username string) (*model.User, error) {
-	return m.FindByUsername(username)
+func (m *MockUserDao) FindByUsernameFromDB(ctx context.Context, username string) (*model.User, error) {
+	return m.FindByUsername(ctx, username)
 }
 
-func (m *MockUserDao) FindByEmailFromDB(email string) (*model.User, error) {
-	return m.FindByEmail(email)
+func (m *MockUserDao) FindByEmailFromDB(ctx context.Context, email string) (*model.User, error) {
+	return m.FindByEmail(ctx, email)
 }
 
-func (m *MockUserDao) FindByPhoneFromDB(phone string) (*model.User, error) {
-	return m.FindByPhone(phone)
+func (m *MockUserDao) FindByPhoneFromDB(ctx context.Context, phone string) (*model.User, error) {
+	return m.FindByPhone(ctx, phone)
 }
 
-func (m *MockUserDao) FindByEmail(email string) (*model.User, error) {
+func (m *MockUserDao) FindByEmail(ctx context.Context, email string) (*model.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	u, ok := m.byEM[email]
@@ -101,7 +102,7 @@ func (m *MockUserDao) FindByEmail(email string) (*model.User, error) {
 	return u, nil
 }
 
-func (m *MockUserDao) FindByPhone(phone string) (*model.User, error) {
+func (m *MockUserDao) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	u, ok := m.byPH[phone]
@@ -111,7 +112,7 @@ func (m *MockUserDao) FindByPhone(phone string) (*model.User, error) {
 	return u, nil
 }
 
-func (m *MockUserDao) Update(user *model.User) (*model.User, error) {
+func (m *MockUserDao) Update(ctx context.Context, user *model.User) (*model.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	existing, ok := m.users[user.ID]
@@ -141,7 +142,7 @@ func (m *MockUserDao) Update(user *model.User) (*model.User, error) {
 	return user, nil
 }
 
-func (m *MockUserDao) Delete(id uint) error {
+func (m *MockUserDao) Delete(ctx context.Context, id uint) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	u, ok := m.users[id]
@@ -161,11 +162,11 @@ func (m *MockUserDao) Delete(id uint) error {
 	return nil
 }
 
-func (m *MockUserDao) ClearUserCache(user *model.User) error {
+func (m *MockUserDao) ClearUserCache(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (m *MockUserDao) List(page, pageSize int) ([]*model.User, int64, error) {
+func (m *MockUserDao) List(ctx context.Context, page, pageSize int) ([]*model.User, int64, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var users []*model.User
@@ -212,7 +213,7 @@ func (m *MockLoginHistoryDao) Reset() {
 	m.records = make([]*model.LoginHistory, 0)
 }
 
-func (m *MockLoginHistoryDao) Create(lh *model.LoginHistory) (*model.LoginHistory, error) {
+func (m *MockLoginHistoryDao) Create(ctx context.Context, lh *model.LoginHistory) (*model.LoginHistory, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	lh.ID = uint(len(m.records) + 1)
@@ -221,7 +222,7 @@ func (m *MockLoginHistoryDao) Create(lh *model.LoginHistory) (*model.LoginHistor
 	return lh, nil
 }
 
-func (m *MockLoginHistoryDao) FindByID(id uint) (*model.LoginHistory, error) {
+func (m *MockLoginHistoryDao) FindByID(ctx context.Context, id uint) (*model.LoginHistory, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, r := range m.records {
@@ -232,7 +233,7 @@ func (m *MockLoginHistoryDao) FindByID(id uint) (*model.LoginHistory, error) {
 	return nil, errors.New("not found")
 }
 
-func (m *MockLoginHistoryDao) FindByUserID(userID uint, page, pageSize int) ([]*model.LoginHistory, int64, error) {
+func (m *MockLoginHistoryDao) FindByUserID(ctx context.Context, userID uint, page, pageSize int) ([]*model.LoginHistory, int64, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var result []*model.LoginHistory
@@ -245,7 +246,7 @@ func (m *MockLoginHistoryDao) FindByUserID(userID uint, page, pageSize int) ([]*
 	return result, total, nil
 }
 
-func (m *MockLoginHistoryDao) Delete(id uint) error {
+func (m *MockLoginHistoryDao) Delete(ctx context.Context, id uint) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for i, r := range m.records {
@@ -257,7 +258,7 @@ func (m *MockLoginHistoryDao) Delete(id uint) error {
 	return errors.New("not found")
 }
 
-func (m *MockLoginHistoryDao) DeleteByUserID(userID uint) error {
+func (m *MockLoginHistoryDao) DeleteByUserID(ctx context.Context, userID uint) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var keep []*model.LoginHistory
@@ -270,7 +271,7 @@ func (m *MockLoginHistoryDao) DeleteByUserID(userID uint) error {
 	return nil
 }
 
-func (m *MockLoginHistoryDao) DeleteOldRecords(days int) error {
+func (m *MockLoginHistoryDao) DeleteOldRecords(ctx context.Context, days int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	cutoff := time.Now().AddDate(0, 0, -days)
@@ -303,7 +304,7 @@ func (m *MockThirdPartyUserDao) Reset() {
 	m.metas = make([]*model.ThirdPartyUserMeta, 0)
 }
 
-func (m *MockThirdPartyUserDao) Create(meta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error) {
+func (m *MockThirdPartyUserDao) Create(ctx context.Context, meta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	meta.ID = uint(len(m.metas) + 1)
@@ -313,7 +314,7 @@ func (m *MockThirdPartyUserDao) Create(meta *model.ThirdPartyUserMeta) (*model.T
 	return meta, nil
 }
 
-func (m *MockThirdPartyUserDao) FindByID(id uint) (*model.ThirdPartyUserMeta, error) {
+func (m *MockThirdPartyUserDao) FindByID(ctx context.Context, id uint) (*model.ThirdPartyUserMeta, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, meta := range m.metas {
@@ -324,7 +325,7 @@ func (m *MockThirdPartyUserDao) FindByID(id uint) (*model.ThirdPartyUserMeta, er
 	return nil, errors.New("not found")
 }
 
-func (m *MockThirdPartyUserDao) FindByOpenIDAndProvider(openID string, provider string) (*model.ThirdPartyUserMeta, error) {
+func (m *MockThirdPartyUserDao) FindByOpenIDAndProvider(ctx context.Context, openID string, provider string) (*model.ThirdPartyUserMeta, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, meta := range m.metas {
@@ -335,7 +336,7 @@ func (m *MockThirdPartyUserDao) FindByOpenIDAndProvider(openID string, provider 
 	return nil, errors.New("not found")
 }
 
-func (m *MockThirdPartyUserDao) FindByUnionID(unionID string) (*model.ThirdPartyUserMeta, error) {
+func (m *MockThirdPartyUserDao) FindByUnionID(ctx context.Context, unionID string) (*model.ThirdPartyUserMeta, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, meta := range m.metas {
@@ -346,7 +347,7 @@ func (m *MockThirdPartyUserDao) FindByUnionID(unionID string) (*model.ThirdParty
 	return nil, errors.New("not found")
 }
 
-func (m *MockThirdPartyUserDao) FindByUserID(userID uint) ([]*model.ThirdPartyUserMeta, error) {
+func (m *MockThirdPartyUserDao) FindByUserID(ctx context.Context, userID uint) ([]*model.ThirdPartyUserMeta, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var result []*model.ThirdPartyUserMeta
@@ -358,7 +359,7 @@ func (m *MockThirdPartyUserDao) FindByUserID(userID uint) ([]*model.ThirdPartyUs
 	return result, nil
 }
 
-func (m *MockThirdPartyUserDao) Update(meta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error) {
+func (m *MockThirdPartyUserDao) Update(ctx context.Context, meta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for i, existing := range m.metas {
@@ -371,7 +372,7 @@ func (m *MockThirdPartyUserDao) Update(meta *model.ThirdPartyUserMeta) (*model.T
 	return nil, errors.New("not found")
 }
 
-func (m *MockThirdPartyUserDao) Delete(id uint) error {
+func (m *MockThirdPartyUserDao) Delete(ctx context.Context, id uint) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for i, meta := range m.metas {
@@ -383,7 +384,7 @@ func (m *MockThirdPartyUserDao) Delete(id uint) error {
 	return errors.New("not found")
 }
 
-func (m *MockThirdPartyUserDao) DeleteByUserID(userID uint) error {
+func (m *MockThirdPartyUserDao) DeleteByUserID(ctx context.Context, userID uint) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var keep []*model.ThirdPartyUserMeta
@@ -415,7 +416,7 @@ func (m *MockTrustedDeviceDao) Reset() {
 	m.devices = make([]*model.TrustedDevice, 0)
 }
 
-func (m *MockTrustedDeviceDao) Create(d *model.TrustedDevice) (*model.TrustedDevice, error) {
+func (m *MockTrustedDeviceDao) Create(ctx context.Context, d *model.TrustedDevice) (*model.TrustedDevice, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	d.ID = uint(len(m.devices) + 1)
@@ -425,7 +426,7 @@ func (m *MockTrustedDeviceDao) Create(d *model.TrustedDevice) (*model.TrustedDev
 	return d, nil
 }
 
-func (m *MockTrustedDeviceDao) FindByID(id uint) (*model.TrustedDevice, error) {
+func (m *MockTrustedDeviceDao) FindByID(ctx context.Context, id uint) (*model.TrustedDevice, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, d := range m.devices {
@@ -436,7 +437,7 @@ func (m *MockTrustedDeviceDao) FindByID(id uint) (*model.TrustedDevice, error) {
 	return nil, errors.New("not found")
 }
 
-func (m *MockTrustedDeviceDao) FindByUserIDAndFingerprint(userID uint, fingerprint string) (*model.TrustedDevice, error) {
+func (m *MockTrustedDeviceDao) FindByUserIDAndFingerprint(ctx context.Context, userID uint, fingerprint string) (*model.TrustedDevice, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, d := range m.devices {
@@ -447,7 +448,7 @@ func (m *MockTrustedDeviceDao) FindByUserIDAndFingerprint(userID uint, fingerpri
 	return nil, errors.New("not found")
 }
 
-func (m *MockTrustedDeviceDao) FindByUserID(userID uint) ([]*model.TrustedDevice, error) {
+func (m *MockTrustedDeviceDao) FindByUserID(ctx context.Context, userID uint) ([]*model.TrustedDevice, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var result []*model.TrustedDevice
@@ -459,7 +460,7 @@ func (m *MockTrustedDeviceDao) FindByUserID(userID uint) ([]*model.TrustedDevice
 	return result, nil
 }
 
-func (m *MockTrustedDeviceDao) Update(d *model.TrustedDevice) (*model.TrustedDevice, error) {
+func (m *MockTrustedDeviceDao) Update(ctx context.Context, d *model.TrustedDevice) (*model.TrustedDevice, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for i, existing := range m.devices {
@@ -472,7 +473,7 @@ func (m *MockTrustedDeviceDao) Update(d *model.TrustedDevice) (*model.TrustedDev
 	return nil, errors.New("not found")
 }
 
-func (m *MockTrustedDeviceDao) Delete(id uint) error {
+func (m *MockTrustedDeviceDao) Delete(ctx context.Context, id uint) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for i, d := range m.devices {
@@ -484,7 +485,7 @@ func (m *MockTrustedDeviceDao) Delete(id uint) error {
 	return errors.New("not found")
 }
 
-func (m *MockTrustedDeviceDao) DeleteByUserID(userID uint) error {
+func (m *MockTrustedDeviceDao) DeleteByUserID(ctx context.Context, userID uint) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var keep []*model.TrustedDevice

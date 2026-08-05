@@ -21,19 +21,19 @@ type UserService interface {
 	LoginRecord(ctx context.Context, req *model.LoginRecordRequest)
 
 	// GetUserInfo retrieves user information
-	GetUserInfo(userID uint) (*model.User, error)
+	GetUserInfo(ctx context.Context, userID uint) (*model.User, error)
 
 	// UpdateUserInfo updates user information
-	UpdateUserInfo(userID uint, nickname string, phone string, avatar string) (*model.User, error)
+	UpdateUserInfo(ctx context.Context, userID uint, nickname string, phone string, avatar string) (*model.User, error)
 
 	// ChangePassword changes user password
-	ChangePassword(userID uint, oldPassword string, newPassword string) error
+	ChangePassword(ctx context.Context, userID uint, oldPassword string, newPassword string) error
 
 	// ResetPassword resets user password
-	ResetPassword(email string, verifyCode string, newPassword string) error
+	ResetPassword(ctx context.Context, email string, verifyCode string, newPassword string) error
 
 	// SendResetPasswordCode sends reset password verification code
-	SendResetPasswordCode(email string) error
+	SendResetPasswordCode(ctx context.Context, email string) error
 }
 
 func RegisterUserService(impl UserService) {

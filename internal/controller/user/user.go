@@ -60,7 +60,7 @@ func (uc *userController) LoginRecord(ctx context.Context, req *v1.LoginRecordRe
 }
 
 func (uc *userController) GetUserInfo(ctx context.Context, req *v1.GetUserInfoRequest) (*v1.GetUserInfoResponse, error) {
-	user, err := service.GetUserService().GetUserInfo(currentUserID(ctx))
+	user, err := service.GetUserService().GetUserInfo(ctx, currentUserID(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (uc *userController) GetUserInfo(ctx context.Context, req *v1.GetUserInfoRe
 }
 
 func (uc *userController) UpdateUserInfo(ctx context.Context, req *v1.UpdateUserInfoRequest) (*v1.UpdateUserInfoResponse, error) {
-	user, err := service.GetUserService().UpdateUserInfo(currentUserID(ctx), req.Nickname, req.Phone, req.Avatar)
+	user, err := service.GetUserService().UpdateUserInfo(ctx, currentUserID(ctx), req.Nickname, req.Phone, req.Avatar)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (uc *userController) UpdateUserInfo(ctx context.Context, req *v1.UpdateUser
 }
 
 func (uc *userController) ChangePassword(ctx context.Context, req *v1.ChangePasswordRequest) (*v1.ChangePasswordResponse, error) {
-	err := service.GetUserService().ChangePassword(currentUserID(ctx), req.OldPassword, req.NewPassword)
+	err := service.GetUserService().ChangePassword(ctx, currentUserID(ctx), req.OldPassword, req.NewPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (uc *userController) ChangePassword(ctx context.Context, req *v1.ChangePass
 }
 
 func (uc *userController) ResetPassword(ctx context.Context, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error) {
-	err := service.GetUserService().ResetPassword(req.Email, req.VerifyCode, req.NewPassword)
+	err := service.GetUserService().ResetPassword(ctx, req.Email, req.VerifyCode, req.NewPassword)
 	if err != nil {
 		return nil, err
 	}

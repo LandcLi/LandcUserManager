@@ -68,6 +68,6 @@ func (c *MockCache) Exists(ctx context.Context, key string) (bool, error) {
 	return true, nil
 }
 
-func (c *MockCache) Close() error {
+func (c *MockCache) Close(ctx context.Context) error {
 	return nil
 }

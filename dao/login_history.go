@@ -1,6 +1,8 @@
 package dao
 
 import (
+	"context"
+
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
@@ -8,22 +10,22 @@ import (
 // LoginHistoryDao defines the login history data access interface.
 type LoginHistoryDao interface {
 	// Create creates a login history record
-	Create(loginHistory *model.LoginHistory) (*model.LoginHistory, error)
+	Create(ctx context.Context, loginHistory *model.LoginHistory) (*model.LoginHistory, error)
 
 	// FindByID finds by ID
-	FindByID(id uint) (*model.LoginHistory, error)
+	FindByID(ctx context.Context, id uint) (*model.LoginHistory, error)
 
 	// FindByUserID finds by user ID with pagination
-	FindByUserID(userID uint, page, pageSize int) ([]*model.LoginHistory, int64, error)
+	FindByUserID(ctx context.Context, userID uint, page, pageSize int) ([]*model.LoginHistory, int64, error)
 
 	// Delete deletes a login history record
-	Delete(id uint) error
+	Delete(ctx context.Context, id uint) error
 
 	// DeleteByUserID deletes by user ID
-	DeleteByUserID(userID uint) error
+	DeleteByUserID(ctx context.Context, userID uint) error
 
 	// DeleteOldRecords deletes records older than specified days
-	DeleteOldRecords(days int) error
+	DeleteOldRecords(ctx context.Context, days int) error
 }
 
 func RegisterLoginHistoryDao(impl LoginHistoryDao) {

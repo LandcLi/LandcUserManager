@@ -1,6 +1,8 @@
 package dao
 
 import (
+	"context"
+
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
@@ -8,40 +10,40 @@ import (
 // UserDao defines the user data access interface.
 type UserDao interface {
 	// Create creates a user
-	Create(user *model.User) (*model.User, error)
+	Create(ctx context.Context, user *model.User) (*model.User, error)
 
 	// FindByID finds user by ID
-	FindByID(id uint) (*model.User, error)
+	FindByID(ctx context.Context, id uint) (*model.User, error)
 
 	// FindByUsername finds user by username
-	FindByUsername(username string) (*model.User, error)
+	FindByUsername(ctx context.Context, username string) (*model.User, error)
 
 	// FindByUsernameFromDB finds user by username directly from DB, skipping cache
-	FindByUsernameFromDB(username string) (*model.User, error)
+	FindByUsernameFromDB(ctx context.Context, username string) (*model.User, error)
 
 	// FindByEmailFromDB finds user by email directly from DB, skipping cache
-	FindByEmailFromDB(email string) (*model.User, error)
+	FindByEmailFromDB(ctx context.Context, email string) (*model.User, error)
 
 	// FindByPhoneFromDB finds user by phone directly from DB, skipping cache
-	FindByPhoneFromDB(phone string) (*model.User, error)
+	FindByPhoneFromDB(ctx context.Context, phone string) (*model.User, error)
 
 	// FindByEmail finds user by email
-	FindByEmail(email string) (*model.User, error)
+	FindByEmail(ctx context.Context, email string) (*model.User, error)
 
 	// FindByPhone finds user by phone
-	FindByPhone(phone string) (*model.User, error)
+	FindByPhone(ctx context.Context, phone string) (*model.User, error)
 
 	// Update updates a user
-	Update(user *model.User) (*model.User, error)
+	Update(ctx context.Context, user *model.User) (*model.User, error)
 
 	// Delete deletes a user
-	Delete(id uint) error
+	Delete(ctx context.Context, id uint) error
 
 	// ClearUserCache clears user cache
-	ClearUserCache(user *model.User) error
+	ClearUserCache(ctx context.Context, user *model.User) error
 
 	// List gets user list
-	List(page, pageSize int) ([]*model.User, int64, error)
+	List(ctx context.Context, page, pageSize int) ([]*model.User, int64, error)
 }
 
 func RegisterUserDao(impl UserDao) {

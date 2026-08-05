@@ -1,6 +1,8 @@
 package dao
 
 import (
+	"context"
+
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/landc-go/frame/pkg/di"
 )
@@ -8,28 +10,28 @@ import (
 // ThirdPartyUserDao defines the third-party user data access interface.
 type ThirdPartyUserDao interface {
 	// Create creates a third-party user association
-	Create(thirdPartyUserMeta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error)
+	Create(ctx context.Context, thirdPartyUserMeta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error)
 
 	// FindByID finds by ID
-	FindByID(id uint) (*model.ThirdPartyUserMeta, error)
+	FindByID(ctx context.Context, id uint) (*model.ThirdPartyUserMeta, error)
 
 	// FindByOpenIDAndProvider finds by OpenID and provider
-	FindByOpenIDAndProvider(openID string, provider string) (*model.ThirdPartyUserMeta, error)
+	FindByOpenIDAndProvider(ctx context.Context, openID string, provider string) (*model.ThirdPartyUserMeta, error)
 
 	// FindByUnionID finds by UnionID
-	FindByUnionID(unionID string) (*model.ThirdPartyUserMeta, error)
+	FindByUnionID(ctx context.Context, unionID string) (*model.ThirdPartyUserMeta, error)
 
 	// FindByUserID finds by user ID
-	FindByUserID(userID uint) ([]*model.ThirdPartyUserMeta, error)
+	FindByUserID(ctx context.Context, userID uint) ([]*model.ThirdPartyUserMeta, error)
 
 	// Update updates a third-party user association
-	Update(thirdPartyUserMeta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error)
+	Update(ctx context.Context, thirdPartyUserMeta *model.ThirdPartyUserMeta) (*model.ThirdPartyUserMeta, error)
 
 	// Delete deletes a third-party user association
-	Delete(id uint) error
+	Delete(ctx context.Context, id uint) error
 
 	// DeleteByUserID deletes by user ID
-	DeleteByUserID(userID uint) error
+	DeleteByUserID(ctx context.Context, userID uint) error
 }
 
 func RegisterThirdPartyUserDao(impl ThirdPartyUserDao) {

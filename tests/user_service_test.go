@@ -223,7 +223,7 @@ func TestLoginVerifyCode_UserNotFound_NoAutoCreate(t *testing.T) {
 		t.Fatalf("expected ErrUserNotFound (no auto-create), got: %v", err)
 	}
 	// Verify user was NOT created
-	if _, err := mockUserDao.FindByEmail("newuser@example.com"); err == nil {
+	if _, err := mockUserDao.FindByEmail(context.Background(), "newuser@example.com"); err == nil {
 		t.Fatal("expected no user to be auto-created on verify-code login")
 	}
 }
@@ -233,7 +233,7 @@ func TestLoginVerifyCode_UserNotFound_NoAutoCreate(t *testing.T) {
 func TestLoginThirdParty_MatchByOpenID(t *testing.T) {
 	reset()
 	user := addTestUser("tpuser1", "", "", "", 1)
-	mockThirdPartyDao.Create(&model.ThirdPartyUserMeta{
+	mockThirdPartyDao.Create(context.Background(), &model.ThirdPartyUserMeta{
 		UserID:   user.ID,
 		Provider: "github",
 		OpenID:   "github-open-123",
@@ -265,7 +265,7 @@ func TestLoginThirdParty_MatchByOpenID(t *testing.T) {
 func TestLoginThirdParty_MatchByUnionID(t *testing.T) {
 	reset()
 	user := addTestUser("tpuser2", "", "", "", 1)
-	mockThirdPartyDao.Create(&model.ThirdPartyUserMeta{
+	mockThirdPartyDao.Create(context.Background(), &model.ThirdPartyUserMeta{
 		UserID:   user.ID,
 		Provider: "wechat",
 		OpenID:   "wx-open-old",
@@ -409,7 +409,7 @@ func TestGetUserInfo_Success(t *testing.T) {
 	reset()
 	user := addTestUser("infouser", "info@example.com", "13900139000", "pass", 1)
 
-	result, err := getUserService().GetUserInfo(user.ID)
+	result, err := getUserService().GetUserInfo(context.Background(), user.ID)
 	if err != nil {
 		t.Fatalf("GetUserInfo failed: %v", err)
 	}
@@ -423,7 +423,7 @@ func TestGetUserInfo_Success(t *testing.T) {
 
 func TestGetUserInfo_NotFound(t *testing.T) {
 	reset()
-	_, err := getUserService().GetUserInfo(99999)
+	_, err := getUserService().GetUserInfo(context.Background(), 99999)
 	if err == nil {
 		t.Fatal("expected error for non-existent user")
 	}
@@ -435,7 +435,7 @@ func TestUpdateUserInfo_Success(t *testing.T) {
 	reset()
 	user := addTestUser("updateuser", "old@example.com", "", "pass", 1)
 
-	result, err := getUserService().UpdateUserInfo(user.ID, "新昵称", "18800188000", "http://avatar.url")
+	result, err := getUserService().UpdateUserInfo(context.Background(), user.ID, "新昵称", "18800188000", "http://avatar.url")
 	if err != nil {
 		t.Fatalf("UpdateUserInfo failed: %v", err)
 	}
@@ -454,7 +454,7 @@ func TestUpdateUserInfo_Partial(t *testing.T) {
 	reset()
 	user := addTestUser("partial", "partial@example.com", "13900139000", "pass", 1)
 
-	result, err := getUserService().UpdateUserInfo(user.ID, "onlynick", "", "")
+	result, err := getUserService().UpdateUserInfo(context.Background(), user.ID, "onlynick", "", "")
 	if err != nil {
 		t.Fatalf("UpdateUserInfo failed: %v", err)
 	}
@@ -468,7 +468,7 @@ func TestUpdateUserInfo_Partial(t *testing.T) {
 
 func TestUpdateUserInfo_NotFound(t *testing.T) {
 	reset()
-	_, err := getUserService().UpdateUserInfo(99999, "nick", "", "")
+	_, err := getUserService().UpdateUserInfo(context.Background(), 99999, "nick", "", "")
 	if err == nil {
 		t.Fatal("expected error for non-existent user")
 	}
@@ -480,7 +480,7 @@ func TestChangePassword_Success(t *testing.T) {
 	reset()
 	user := addTestUser("changepwd", "cp@example.com", "", "oldPass1", 1)
 
-	err := getUserService().ChangePassword(user.ID, "oldPass1", "newPass1")
+	err := getUserService().ChangePassword(context.Background(), user.ID, "oldPass1", "newPass1")
 	if err != nil {
 		t.Fatalf("ChangePassword failed: %v", err)
 	}
@@ -501,7 +501,7 @@ func TestChangePassword_WrongOldPassword(t *testing.T) {
 	reset()
 	user := addTestUser("cpuser", "", "", "correctOld", 1)
 
-	err := getUserService().ChangePassword(user.ID, "wrongOld", "newPass")
+	err := getUserService().ChangePassword(context.Background(), user.ID, "wrongOld", "newPass")
 	if err == nil || !errors.Is(err, lumerrors.ErrOldPasswordWrong) {
 		t.Fatalf("expected ErrOldPasswordWrong error, got: %v", err)
 	}
@@ -509,7 +509,7 @@ func TestChangePassword_WrongOldPassword(t *testing.T) {
 
 func TestChangePassword_UserNotFound(t *testing.T) {
 	reset()
-	err := getUserService().ChangePassword(99999, "old", "new")
+	err := getUserService().ChangePassword(context.Background(), 99999, "old", "new")
 	if err == nil {
 		t.Fatal("expected error for non-existent user")
 	}
@@ -522,7 +522,7 @@ func TestResetPassword_Success(t *testing.T) {
 	addTestUser("resetuser", "reset@example.com", "", "oldPwd", 1)
 	mockCommonService.VerifyCode = "112233"
 
-	err := getUserService().ResetPassword("reset@example.com", "112233", "newPwd123")
+	err := getUserService().ResetPassword(context.Background(), "reset@example.com", "112233", "newPwd123")
 	if err != nil {
 		t.Fatalf("ResetPassword failed: %v", err)
 	}
@@ -544,7 +544,7 @@ func TestResetPassword_WrongVerifyCode(t *testing.T) {
 	addTestUser("rpuser", "rp@example.com", "", "old", 1)
 	mockCommonService.VerifyCode = "111111"
 
-	err := getUserService().ResetPassword("rp@example.com", "000000", "newPass")
+	err := getUserService().ResetPassword(context.Background(), "rp@example.com", "000000", "newPass")
 	if err == nil {
 		t.Fatal("expected error for wrong verify code")
 	}
@@ -554,7 +554,7 @@ func TestResetPassword_UserNotFound(t *testing.T) {
 	reset()
 	mockCommonService.VerifyCode = "123456"
 
-	err := getUserService().ResetPassword("noone@example.com", "123456", "newPass")
+	err := getUserService().ResetPassword(context.Background(), "noone@example.com", "123456", "newPass")
 	if err == nil {
 		t.Fatal("expected error for non-existent user")
 	}
@@ -566,7 +566,7 @@ func TestSendResetPasswordCode_Success(t *testing.T) {
 	reset()
 	addTestUser("sendcode", "sendcode@example.com", "", "pass", 1)
 
-	err := getUserService().SendResetPasswordCode("sendcode@example.com")
+	err := getUserService().SendResetPasswordCode(context.Background(), "sendcode@example.com")
 	if err != nil {
 		t.Fatalf("SendResetPasswordCode failed: %v", err)
 	}
@@ -574,7 +574,7 @@ func TestSendResetPasswordCode_Success(t *testing.T) {
 
 func TestSendResetPasswordCode_UserNotFound(t *testing.T) {
 	reset()
-	err := getUserService().SendResetPasswordCode("noone@example.com")
+	err := getUserService().SendResetPasswordCode(context.Background(), "noone@example.com")
 	if err == nil {
 		t.Fatal("expected error for non-existent user")
 	}
@@ -596,7 +596,7 @@ func TestLoginRecord_NewDevice(t *testing.T) {
 	})
 
 	// Verify login history was recorded
-	histories, _, err := mockLoginHistoryDao.FindByUserID(user.ID, 1, 10)
+	histories, _, err := mockLoginHistoryDao.FindByUserID(context.Background(), user.ID, 1, 10)
 	if err != nil {
 		t.Fatalf("expected login history, got error: %v", err)
 	}
@@ -608,7 +608,7 @@ func TestLoginRecord_NewDevice(t *testing.T) {
 	}
 
 	// Verify trusted device was created
-	device, err := mockTrustedDeviceDao.FindByUserIDAndFingerprint(user.ID, "device-record-1")
+	device, err := mockTrustedDeviceDao.FindByUserIDAndFingerprint(context.Background(), user.ID, "device-record-1")
 	if err != nil {
 		t.Fatalf("expected trusted device, got error: %v", err)
 	}
@@ -642,7 +642,7 @@ func TestLoginRecord_ExistingDevice(t *testing.T) {
 	})
 
 	// Verify device was updated
-	device, err := mockTrustedDeviceDao.FindByUserIDAndFingerprint(user.ID, "device-existing")
+	device, err := mockTrustedDeviceDao.FindByUserIDAndFingerprint(context.Background(), user.ID, "device-existing")
 	if err != nil {
 		t.Fatalf("expected trusted device, got error: %v", err)
 	}
