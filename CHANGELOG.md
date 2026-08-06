@@ -43,6 +43,19 @@
 - 第三方 AccessToken 不再明文入库
 - JWT 密钥强度校验（>= 32 字符）
 
+## [Unreleased - v0.6.0 适配]
+
+### Added
+- `serverlib` 库模式入口：`RegisterToRouter`（`WithAuth`/`WithWebOptions`），独立部署与下游嵌入共用同一代码路径
+- landc-go v0.6.0 能力验证测试：注册选项（V1）/ 显式 proxy 构造（V3）/ OpenAPI（V4）/ 命名资源作用域（V5）/ 模拟宿主嵌入（L3）
+
+### Changed
+- DAO/service 层全量迁移为 ctx 感知（`migrate-dbctx`：`GetDB()`→`GetDBFrom(ctx)`、`GetCache()`→`GetCacheFrom(ctx)`）
+- `landc gen lib` 生成 `serverlib` 骨架并补全 common 控制器 + 鉴权中间件 + `InitWithConfig`
+- `landc gen proxy` 重新生成 SDK（显式 `NewUserControllerProxy`/`NewCommonControllerProxy` 构造函数）
+- landc-go `frame` 升级至 **v0.6.0**（注册选项/路由查询/命名资源作用域/库模式入口），api/log/tools 保持 v0.5.0，**移除开发期 replace**
+- 独立部署入口 `internal/cmd` 改用 `serverlib.RegisterToRouter`
+
 ## [Unreleased - v0.5.0 适配]
 
 ### Changed
