@@ -43,6 +43,17 @@
 - 第三方 AccessToken 不再明文入库
 - JWT 密钥强度校验（>= 32 字符）
 
+## [Unreleased - v0.7.0 适配]
+
+### Changed
+- landc-go `tools`/`frame` 升级至 **v0.7.0**（对应提取需求 A1/B1/B2 落地）
+- **A1 加解密**：`utility/crypto` 重构为 `tools/security` 薄封装（密钥来源 `LUM_ENC_KEY` 由 LUM 侧封装，底层 AES-GCM 来自 tools/security）
+- **B1 验证码**：`SendVerifyCode`/`CheckVerifyCode` 切换为 `frame/pkg/verifycode`（生成/存储/TTL/发送间隔/每日上限/一次性校验由框架承担），移除 `common_impl` 手写限流与验证码逻辑
+- **B2 限流**：验证码限流底层使用 `tools/ratelimit`（缓存原子 Incr，并发不丢计数）
+
+### Removed
+- `common_impl` 手写限流逻辑（`getDailyCount`/`incrementDailyCount`/间隔标记）——由框架能力替代
+
 ## [Unreleased - v0.6.0 适配]
 
 ### Added

@@ -40,8 +40,8 @@ func TestMain(m *testing.M) {
 		ExpireTime: time.Hour,
 		Issuer:     "landc-user-manager-test",
 	})
-	// 避免 crypto 包在测试打印开发密钥告警
-	os.Setenv("LUM_ENC_KEY", "test-encryption-key-0123456789abcdef")
+	// 避免 crypto 包在测试打印开发密钥告警（32 hex 字符 → 16 字节 AES-128）
+	os.Setenv("LUM_ENC_KEY", "0123456789abcdef0123456789abcdef")
 
 	m.Run()
 }

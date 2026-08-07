@@ -6,9 +6,9 @@ toolchain go1.26.5
 
 require (
 	github.com/LandcLi/landc-go/api v0.5.0
-	github.com/LandcLi/landc-go/frame v0.6.0
+	github.com/LandcLi/landc-go/frame v0.7.0
 	github.com/LandcLi/landc-go/log v0.5.0
-	github.com/LandcLi/landc-go/tools v0.5.0
+	github.com/LandcLi/landc-go/tools v0.7.0
 	github.com/gin-gonic/gin v1.11.0
 	golang.org/x/crypto v0.53.0
 	gorm.io/gorm v1.31.1
