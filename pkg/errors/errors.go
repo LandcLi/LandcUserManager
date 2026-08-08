@@ -30,6 +30,11 @@ var (
 	ErrDailyLimitExceeded    = errors.New("daily verify code limit exceeded")
 )
 
+// ---- 请求参数错误 ----
+var (
+	ErrInvalidRequestParams = errors.New("invalid request parameters")
+)
+
 // ---- 验证码相关错误 ----
 var (
 	ErrVerifyCodeSendFailed     = errors.New("verify code send failed")

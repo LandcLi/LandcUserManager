@@ -293,6 +293,60 @@ func TestLoginThirdParty_MatchByUnionID(t *testing.T) {
 	}
 }
 
+func TestLoginThirdParty_EmptyIdentifierAndAuthCode(t *testing.T) {
+	// 需求 1/2：THIRD_PARTY 模式下 Identifier/AuthCode 可为空，
+	// LUM 以 AccessToken 为唯一凭证，openId 由 FetchUserInfo 获取。
+	reset()
+	RegisterMockThirdPartyAdapter("github", NewMockThirdPartyAdapter(&model.ThirdPartyUser{
+		Provider:    "github",
+		OpenID:      "github-empty-ident",
+		Email:       "tp-empty@example.com", // 用于新用户建号
+		AccessToken: "token-123",
+	}))
+
+	resp, err := getUserService().Login(context.Background(), &v1.LoginRequest{
+		Identifier:  "",
+		AuthCode:    "",
+		AuthType:    constants.AuthTypeThirdParty,
+		VerifyType:  "github",
+		AccessToken: "token-123",
+	})
+	if err != nil {
+		t.Fatalf("Login failed with empty identifier/authcode: %v", err)
+	}
+	if resp.UserID == 0 {
+		t.Fatal("expected non-zero UserID")
+	}
+	if resp.Token == "" {
+		t.Fatal("expected JWT token")
+	}
+}
+
+func TestLoginThirdParty_MissingAccessToken(t *testing.T) {
+	// THIRD_PARTY 模式 AccessToken 必填（service 层分支校验兜底）
+	reset()
+	_, err := getUserService().Login(context.Background(), &v1.LoginRequest{
+		AuthType:   constants.AuthTypeThirdParty,
+		VerifyType: "github",
+		AccessToken: "",
+	})
+	if err == nil || !errors.Is(err, lumerrors.ErrInvalidRequestParams) {
+		t.Fatalf("expected ErrInvalidRequestParams for missing access token, got: %v", err)
+	}
+}
+
+func TestLoginPassword_MissingCredentials(t *testing.T) {
+	// PASSWORD 模式 Identifier/AuthCode 仍必填（service 层分支校验兜底）
+	reset()
+	_, err := getUserService().Login(context.Background(), &v1.LoginRequest{
+		AuthType:   constants.AuthTypePassword,
+		VerifyType: constants.VerifyTypeUsername,
+	})
+	if err == nil || !errors.Is(err, lumerrors.ErrInvalidRequestParams) {
+		t.Fatalf("expected ErrInvalidRequestParams for missing credentials, got: %v", err)
+	}
+}
+
 func TestLoginThirdParty_MatchByEmail(t *testing.T) {
 	reset()
 	user := addTestUser("tpuser3", "tp3@example.com", "", "", 1)

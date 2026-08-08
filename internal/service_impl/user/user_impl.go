@@ -37,6 +37,18 @@ func (s *userServiceImpl) Login(ctx context.Context, req *v1.LoginRequest) (*v1.
 		user *model.User
 		err  error
 	)
+	// binding 已放开 required，此处按 AuthType 分支承担必填校验（防安全退化）
+	switch req.AuthType {
+	case constants.AuthTypePassword, constants.AuthTypeVerifyCode:
+		if req.Identifier == "" || req.AuthCode == "" {
+			return nil, lumerrors.ErrInvalidRequestParams
+		}
+	case constants.AuthTypeThirdParty:
+		if req.AccessToken == "" {
+			return nil, lumerrors.ErrInvalidRequestParams
+		}
+	}
+
 	switch req.AuthType {
 	case constants.AuthTypePassword:
 		user, err = s.handleAuthByPassword(ctx, req)
@@ -188,8 +200,16 @@ func (s *userServiceImpl) handleAuthByThirdParty(ctx context.Context, req *v1.Lo
 		user, err = dao.GetUserDao().FindByPhone(ctx, thirdPartyUser.Phone)
 	}
 	if user == nil {
-		// 第三方登录：首次登录自动创建用户（三方登录属于明确的用户授权行为）
-		user, err = s.createUser(ctx, req.VerifyType, req.Identifier, "", req.DeviceFingerprint, req.UserAgent, req.IP)
+		// 第三方登录：首次登录自动创建用户（三方登录属于明确的用户授权行为）。
+		// 优先用第三方返回的邮箱/手机建号（否则 Identifier 为空时退化为随机用户名）。
+		createType, createIdentifier := req.VerifyType, ""
+		switch {
+		case thirdPartyUser.Email != "":
+			createType, createIdentifier = constants.VerifyTypeEmail, thirdPartyUser.Email
+		case thirdPartyUser.Phone != "":
+			createType, createIdentifier = constants.VerifyTypePhone, thirdPartyUser.Phone
+		}
+		user, err = s.createUser(ctx, createType, createIdentifier, "", req.DeviceFingerprint, req.UserAgent, req.IP)
 		if err != nil {
 			return nil, lumerrors.ErrCreateUserFailed
 		}
