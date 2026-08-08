@@ -24,6 +24,13 @@ type wechatAdapter struct {
 }
 
 func (a *wechatAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCode string) (*model.ThirdPartyUser, error) {
+	// 微信 userinfo 必须携带 openid（access_token 无法反查），verifyCode 即 openid（来自换 token 响应）
+	if verifyCode == "" {
+		return nil, lumerrors.ErrThirdPartyTokenInvalid
+	}
+	if accessToken == "" {
+		return nil, lumerrors.ErrThirdPartyTokenInvalid
+	}
 	// 实现微信用户信息拉取逻辑（使用config中的参数）
 	// 2. 使用access_token获取用户信息
 	userInfoURL := "https://api.weixin.qq.com/sns/userinfo"

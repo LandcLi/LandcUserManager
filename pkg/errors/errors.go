@@ -51,7 +51,10 @@ var (
 
 // ---- 第三方登录错误 ----
 var (
-	ErrThirdPartyNotSupported = errors.New("unsupported third party login type")
+	ErrThirdPartyNotSupported       = errors.New("unsupported third party login type")
+	ErrThirdPartyTokenInvalid       = errors.New("third party token invalid or expired")
+	ErrThirdPartyUserDisabled       = errors.New("third party user disabled")
+	ErrThirdPartyFetchUserInfoFailed = errors.New("fetch third party user info failed")
 )
 
 // ---- 第三方API错误 ----

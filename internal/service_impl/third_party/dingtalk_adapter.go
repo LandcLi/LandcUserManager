@@ -26,6 +26,13 @@ type dingtalkAdapter struct {
 }
 
 func (a *dingtalkAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCode string) (*model.ThirdPartyUser, error) {
+	// 钉钉 getuserinfo_bycode 必须携带 tmp_auth_code（即 verifyCode）
+	if verifyCode == "" {
+		return nil, lumerrors.ErrThirdPartyTokenInvalid
+	}
+	if accessToken == "" {
+		return nil, lumerrors.ErrThirdPartyTokenInvalid
+	}
 	// 实现钉钉用户信息拉取逻辑（使用config中的参数）
 	// 2. 使用access_token和code获取用户信息
 	userInfoURL := "https://oapi.dingtalk.com/sns/getuserinfo_bycode"
