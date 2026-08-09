@@ -42,6 +42,13 @@ func (r *userImpl) FindByID(ctx context.Context, id uint) (*model.User, error) {
 		cacheKey := fmt.Sprintf("user:id:%d", id)
 		var user model.User
 		if err := c.GetObject(ctx, cacheKey, &user); err == nil {
+			// 缓存中的 Password 因 json:"-" 被序列化排除；
+			// 敏感操作（修改密码等）需要完整记录，缺失时回源 DB 补齐。
+			if user.Password == "" {
+				if dbErr := framedb.GetDBFrom(ctx).First(&user, id).Error; dbErr != nil {
+					return nil, dbErr
+				}
+			}
 			return &user, nil
 		}
 	}
@@ -165,30 +172,41 @@ func (r *userImpl) FindByPhone(ctx context.Context, phone string) (*model.User, 
 	return &user, nil
 }
 
-// Update 更新用户并刷新缓存
+// Update 更新用户并刷新缓存。
+// 使用 Updates（仅非零字段）而非 Save（全字段覆盖），
+// 避免因缓存/业务传入的零值字段（如 Password 为空）覆盖数据库中的既有值。
 func (r *userImpl) Update(ctx context.Context, user *model.User) (*model.User, error) {
-	err := framedb.GetDBFrom(ctx).Save(user).Error
+	if user.ID == 0 {
+		return nil, fmt.Errorf("user update requires non-zero ID")
+	}
+	err := framedb.GetDBFrom(ctx).Updates(user).Error
 	if err != nil {
+		return nil, err
+	}
+
+	// 重新读取完整记录（含密码），确保返回与缓存一致
+	var fresh model.User
+	if err := framedb.GetDBFrom(ctx).First(&fresh, user.ID).Error; err != nil {
 		return nil, err
 	}
 
 	c := r.cache(ctx)
 	if c != nil {
-		if user.ID != 0 {
-			_ = c.SetObject(ctx, fmt.Sprintf("user:id:%d", user.ID), user, time.Hour)
+		if fresh.ID != 0 {
+			_ = c.SetObject(ctx, fmt.Sprintf("user:id:%d", fresh.ID), fresh, time.Hour)
 		}
-		if user.Username != "" {
-			_ = c.SetObject(ctx, fmt.Sprintf("user:username:%s", user.Username), user, time.Hour)
+		if fresh.Username != "" {
+			_ = c.SetObject(ctx, fmt.Sprintf("user:username:%s", fresh.Username), fresh, time.Hour)
 		}
-		if user.Email != "" {
-			_ = c.SetObject(ctx, fmt.Sprintf("user:email:%s", user.Email), user, time.Hour)
+		if fresh.Email != "" {
+			_ = c.SetObject(ctx, fmt.Sprintf("user:email:%s", fresh.Email), fresh, time.Hour)
 		}
-		if user.Phone != "" {
-			_ = c.SetObject(ctx, fmt.Sprintf("user:phone:%s", user.Phone), user, time.Hour)
+		if fresh.Phone != "" {
+			_ = c.SetObject(ctx, fmt.Sprintf("user:phone:%s", fresh.Phone), fresh, time.Hour)
 		}
 	}
 
-	return user, nil
+	return &fresh, nil
 }
 
 // Delete 删除用户并清除缓存
