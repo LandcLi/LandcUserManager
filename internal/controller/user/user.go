@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/LandcLi/landc-go/frame/pkg/di"
-	"github.com/LandcLi/landc-go/frame/pkg/web"
 
 	userApi "github.com/LandcLi/LandcUserManager/api/user"
 	v1 "github.com/LandcLi/LandcUserManager/api/user/v1"
+	"github.com/LandcLi/LandcUserManager/internal/middleware"
 	"github.com/LandcLi/LandcUserManager/model"
 	"github.com/LandcLi/LandcUserManager/service"
 )
@@ -24,14 +24,14 @@ func NewUserController() *userController {
 	return &userController{}
 }
 
-// currentUserID 从 gin.Context 中读取 Auth 中间件注入的 UserID（JWT claims）
-// 业务一律使用该方法获取当前登录用户，禁止信任前端传参（防 IDOR 越权）
+// currentUserID 从 request context 读取 Auth 中间件注入的 UserID（JWT claims）。
+// 业务一律使用该方法获取当前登录用户，禁止信任前端传参（防 IDOR 越权）。
 func currentUserID(ctx context.Context) uint {
-	gc, ok := web.GinContextFromContext(ctx)
+	id, ok := middleware.UserIDFromContext(ctx)
 	if !ok {
 		return 0
 	}
-	return gc.GetUint("UserID")
+	return id
 }
 
 func (uc *userController) Login(ctx context.Context, req *v1.LoginRequest) (*v1.LoginResponse, error) {

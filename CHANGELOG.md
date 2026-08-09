@@ -43,6 +43,13 @@
 - 第三方 AccessToken 不再明文入库
 - JWT 密钥强度校验（>= 32 字符）
 
+## [Unreleased - v0.8.1 适配]
+
+### Changed
+- landc-go `frame` 升级至 **v0.8.1**（修复 LUM 提交的「web 业务错误码透传」需求）
+- `pkg/errors` 错误变量统一改用 `core.NewError`（带业务错误码）：用户不存在 → `40400`、密码错误 → `40100`、验证码错误 → `42201`、限流 → `50300` 等
+- `middleware.Auth` 将 claims 注入 request context（`createHandler` 传给 controller 的是 `c.Request.Context()`），controller 从标准 ctx 读取 UserID
+
 ## [Unreleased - v0.7.0 适配]
 
 ### Changed
