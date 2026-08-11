@@ -77,6 +77,7 @@ func (a *wechatAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 	}
 
 	return &model.ThirdPartyUser{
+		AccessToken: accessToken,
 		Provider: "wechat",
 		OpenID:   userInfoData.OpenID,
 		UnionID:  userInfoData.UnionID,

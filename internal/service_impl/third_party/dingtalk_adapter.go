@@ -89,6 +89,7 @@ func (a *dingtalkAdapter) FetchUserInfo(ctx context.Context, accessToken, verify
 	}
 
 	return &model.ThirdPartyUser{
+		AccessToken: accessToken,
 		Provider: "dingtalk",
 		OpenID:   userInfoData.UserInfo.OpenID,
 		UnionID:  userInfoData.UserInfo.UnionID,

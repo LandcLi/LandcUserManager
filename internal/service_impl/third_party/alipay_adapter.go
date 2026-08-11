@@ -89,6 +89,7 @@ func (a *alipayAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 	}
 
 	return &model.ThirdPartyUser{
+		AccessToken: accessToken,
 		Provider: "alipay",
 		OpenID:   userInfoData.AlipayUserInfoShareResponse.UserId,
 		UnionID:  userInfoData.AlipayUserInfoShareResponse.UserId,

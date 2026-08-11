@@ -230,6 +230,14 @@ func (s *userServiceImpl) linkThirdPartyUser(ctx context.Context, userID uint, t
 		encryptedToken = thirdPartyUser.AccessToken
 	}
 
+	// Upsert：已存在绑定则更新 token，否则新建，避免重复 INSERT 与 token 过期后无法刷新
+	existing, err := dao.GetThirdPartyUserDao().FindByOpenIDAndProvider(ctx, thirdPartyUser.OpenID, thirdPartyUser.Provider)
+	if err == nil && existing != nil {
+		existing.AccessToken = encryptedToken
+		_, err = dao.GetThirdPartyUserDao().Update(ctx, existing)
+		return err
+	}
+
 	newMeta := &model.ThirdPartyUserMeta{
 		UserID:      userID,
 		Provider:    thirdPartyUser.Provider,
