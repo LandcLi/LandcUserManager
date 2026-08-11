@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	frameauth "github.com/LandcLi/landc-go/frame/pkg/auth"
@@ -173,7 +174,7 @@ func (s *userServiceImpl) handleAuthByThirdParty(ctx context.Context, req *v1.Lo
 		user *model.User
 		err  error
 	)
-	thirdPartyAdapter, ok := service.GetThirdPartyAdapter(req.VerifyType)
+	thirdPartyAdapter, ok := service.GetThirdPartyAdapter(strings.ToLower(req.VerifyType))
 	if !ok {
 		return nil, lumerrors.ErrThirdPartyNotSupported
 	}

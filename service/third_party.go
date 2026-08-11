@@ -45,7 +45,7 @@ func GetThirdPartyAdapter(adapterType string) (ThirdPartyAdapter, bool) {
 // InitWithConfig 库对外暴露的核心初始化函数
 // 遍历配置中的所有第三方类型，通过工厂创建并注册适配器
 func InitWithConfig(globalConfig *config.ThirdPartyGlobalConfig) error {
-	for adapterType, cfgMap := range globalConfig.ThirdParty {
+	for adapterType, cfgMap := range *globalConfig {
 		factory, ok := GetFactory(adapterType)
 		if !ok {
 			return fmt.Errorf("factory not registered for type %s", adapterType)
@@ -56,10 +56,8 @@ func InitWithConfig(globalConfig *config.ThirdPartyGlobalConfig) error {
 			return fmt.Errorf("failed to create adapter %s: %w", adapterType, err)
 		}
 
-		// 仅在未注册时才注册
-		if _, exists := GetThirdPartyAdapter(adapterType); !exists {
-			di.Provide[ThirdPartyAdapter](fmt.Sprintf("adapter.%s", adapterType), adapter)
-		}
+		// 运行时动态注册，使用 Override 而非 Provide（Provide 仅在 init 阶段生效）
+		RegisterThirdPartyAdapter(adapterType, adapter)
 	}
 	return nil
 }

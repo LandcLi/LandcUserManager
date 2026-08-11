@@ -11,9 +11,7 @@ import (
 // 实际配置加载由框架全权负责，GetConfig() 从框架 Config 中提取并转回类型化结构。
 // 字段 json tag 必须与 config.yaml 中的 key 对应（UnmarshalOther 基于 JSON 中转）。
 
-type ThirdPartyGlobalConfig struct {
-	ThirdParty map[string]map[string]interface{} `yaml:"third_party" json:"third_party"`
-}
+type ThirdPartyGlobalConfig = map[string]map[string]interface{}
 
 type Config struct {
 	Server       ServerConfig
