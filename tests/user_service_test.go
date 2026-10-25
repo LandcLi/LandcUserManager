@@ -725,8 +725,47 @@ func TestLogin_NewDeviceAndDifferentLocation(t *testing.T) {
 	if resp.UserID == 0 {
 		t.Fatal("expected non-zero UserID")
 	}
-	// DifferentLocation is always true in current impl
-	if !resp.DifferentLocation {
-		t.Fatal("expected DifferentLocation=true (always returns true)")
+	// 首次登录（无历史记录）不应被判定为异地
+	if resp.DifferentLocation {
+		t.Error("first login should not be flagged as different location")
+	}
+	// 陌生设备应被判定为新设备（此前语义写反，导致真新设备反而为 false）
+	if !resp.IsNewDevice {
+		t.Error("unknown device should be flagged as new device")
+	}
+
+	// 同设备再次登录：不再算新设备，且 IP 未变不算异地
+	resp2, err := getUserService().Login(context.Background(), &v1.LoginRequest{
+		Identifier:        "secureuser",
+		AuthCode:          "pass123",
+		AuthType:          constants.AuthTypePassword,
+		VerifyType:        constants.VerifyTypeUsername,
+		DeviceFingerprint: "new-device",
+		IP:                "10.0.0.5",
+	})
+	if err != nil {
+		t.Fatalf("second login failed: %v", err)
+	}
+	if resp2.IsNewDevice {
+		t.Error("same trusted device should not be flagged as new on second login")
+	}
+	if resp2.DifferentLocation {
+		t.Error("same IP should not be flagged as different location")
+	}
+
+	// 换 IP：应判定为异地
+	resp3, err := getUserService().Login(context.Background(), &v1.LoginRequest{
+		Identifier:        "secureuser",
+		AuthCode:          "pass123",
+		AuthType:          constants.AuthTypePassword,
+		VerifyType:        constants.VerifyTypeUsername,
+		DeviceFingerprint: "new-device",
+		IP:                "10.0.0.99",
+	})
+	if err != nil {
+		t.Fatalf("third login failed: %v", err)
+	}
+	if !resp3.DifferentLocation {
+		t.Error("changed IP should be flagged as different location")
 	}
 }

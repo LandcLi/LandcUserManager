@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/LandcLi/LandcUserManager/model"
+	"gorm.io/gorm"
 )
 
 // ============== MockUserDao ==============
@@ -246,8 +247,25 @@ func (m *MockLoginHistoryDao) FindByUserID(ctx context.Context, userID uint, pag
 	return result, total, nil
 }
 
-func (m *MockLoginHistoryDao) Delete(ctx context.Context, id uint) error {
+func (m *MockLoginHistoryDao) FindLatestByUserID(ctx context.Context, userID uint) (*model.LoginHistory, error) {
 	m.mu.Lock()
+	defer m.mu.Unlock()
+	var latest *model.LoginHistory
+	for _, r := range m.records {
+		if r.UserID != userID {
+			continue
+		}
+		if latest == nil || r.LoginTime.After(latest.LoginTime) {
+			latest = r
+		}
+	}
+	if latest == nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return latest, nil
+}
+
+func (m *MockLoginHistoryDao) Delete(ctx context.Context, id uint) error {	m.mu.Lock()
 	defer m.mu.Unlock()
 	for i, r := range m.records {
 		if r.ID == id {

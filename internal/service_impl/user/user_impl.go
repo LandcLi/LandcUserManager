@@ -67,7 +67,10 @@ func (s *userServiceImpl) Login(ctx context.Context, req *v1.LoginRequest) (*v1.
 		return nil, lumerrors.ErrUserDisabled
 	}
 
-	isNewDevice := s.detectTrustedDevice(ctx, user.ID, req.DeviceFingerprint)
+	// 注意语义：detectTrustedDevice 返回「设备可信」，取反才是「是否新设备」。
+	// 此前直接赋给 isNewDevice，导致可信设备被判为新设备、真陌生设备反而不触发
+	// 临时令牌机制（SSO 的新设备防护因此失效）。
+	isNewDevice := req.DeviceFingerprint != "" && !s.detectTrustedDevice(ctx, user.ID, req.DeviceFingerprint)
 	isDifferentLocation := s.detectDifferentLocation(ctx, user.ID, req.IP)
 
 	// 签发 JWT
@@ -487,8 +490,19 @@ func (s *userServiceImpl) SendResetPasswordCode(ctx context.Context, email strin
 	return commonService.SendVerifyCode(ctx, req)
 }
 
+// detectDifferentLocation 判断本次登录是否为「异地」。
+//
+// 说明：这里只能做 IP 层面的粗判（与最近一次成功登录的 IP 不同即视为异地），
+// 真正的地理位置解析属于风控范畴，需要 IP 归属地服务，见 TODO。
+// 此前硬编码 return true，会让每次登录都被标记为异地，风控信号彻底失效。
 func (s *userServiceImpl) detectDifferentLocation(ctx context.Context, userID uint, ip string) bool {
-	// TODO: implement IP geolocation detection (planned feature)
-	// Currently returns true as a safe default until geolocation service is integrated
-	return true
+	if ip == "" {
+		return false
+	}
+	history, err := dao.GetLoginHistoryDao().FindLatestByUserID(ctx, userID)
+	if err != nil || history == nil || history.IP == "" {
+		// 无历史记录（首次登录）不判定为异地
+		return false
+	}
+	return history.IP != ip
 }

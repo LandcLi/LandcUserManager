@@ -5,6 +5,32 @@
 
 ## [Unreleased]
 
+### 修复（安全）
+
+- **新设备判定语义写反**：`Login` 中 `isNewDevice` 直接取自 `detectTrustedDevice`
+  （该方法返回「设备可信」），导致**可信设备被判为新设备、真正的陌生设备反而不触发**。
+  由于 SSO 依赖该字段决定是否下发临时令牌，实际后果是「新设备二次验证」防护完全失效。
+  现改为 `req.DeviceFingerprint != "" && !detectTrustedDevice(...)`。
+- **异地登录检测硬编码 `return true`**：每次登录都被判定为异地，风控信号形同虚设。
+  现与最近一次登录的 IP 比较，首次登录（无历史）不判为异地。
+
+### Added
+
+- **SQLite 支持（默认开箱即用）**：`database.driver: sqlite` + `auto_migrate: true`
+  即可零外部依赖启动，首次运行自动建库建表。纯 Go 驱动，无需 CGO/gcc。
+- **`serverlib.EnsureSchema()` / `serverlib.Models()`**：本系统的模型清单与建表入口
+  集中在一处；`RegisterToRouter` 会先确保表结构存在（受 `database.auto_migrate` 控制），
+  库模式下宿主无需额外调用。
+- **`LoginHistoryDao.FindLatestByUserID`**：供异地登录判定使用。
+- **`tests/sqlite` 集成冒烟**：临时目录真实 SQLite，覆盖建表、注册、登录、
+  密码哈希落库、登录历史记录与设备信任判定。
+- `config.example.yml` 默认改为 SQLite，并附 MySQL/Redis 切换说明。
+
+### Changed
+
+- 依赖升级至 `landc-go/frame v0.8.4`（SQLite 纯 Go 驱动、`auto_migrate`、库模式路由注册）。
+- README 重写：SQLite 快速开始、库模式嵌入、API 与响应约定、配置要点。
+
 ### Added
 - 新增 `pkg/errors` 包：预定义类型化错误变量，支持 `errors.Is()/errors.As()` 判断
 - 新增 `pkg/consts` 包：统一管理认证类型、验证类型、缓存 Key 等魔法字符串

@@ -56,6 +56,16 @@ func (r *loginHistoryImpl) FindByUserID(ctx context.Context, userID uint, page, 
 	return loginHistories, total, nil
 }
 
+// FindLatestByUserID 返回该用户最近一条登录历史（按登录时间倒序取第一条）。
+func (r *loginHistoryImpl) FindLatestByUserID(ctx context.Context, userID uint) (*model.LoginHistory, error) {
+	var loginHistory model.LoginHistory
+	err := framedb.GetDBFrom(ctx).Where("user_id = ?", userID).Order("login_time DESC").First(&loginHistory).Error
+	if err != nil {
+		return nil, err
+	}
+	return &loginHistory, nil
+}
+
 func (r *loginHistoryImpl) Delete(ctx context.Context, id uint) error {
 	return framedb.GetDBFrom(ctx).Delete(&model.LoginHistory{}, id).Error
 }

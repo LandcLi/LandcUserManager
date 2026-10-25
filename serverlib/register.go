@@ -48,6 +48,12 @@ func RegisterToRouter(s *web.Server, opts ...Option) error {
 		return fmt.Errorf("serverlib: framework not bootstrapped; initialize global config first")
 	}
 
+	// 自身表结构：受 database.auto_migrate 控制（SQLite/开发环境开箱建表，
+	// MySQL 生产环境交由 sqls/init.sql 或版本化迁移），幂等
+	if err := EnsureSchema(); err != nil {
+		return err
+	}
+
 	// 补全（相对 gen lib 骨架）：全局鉴权中间件，必须在 RegisterHandler 之前挂载（与独立部署一致）
 	if o.authEnabled {
 		s.Engine().Use(middleware.Auth())

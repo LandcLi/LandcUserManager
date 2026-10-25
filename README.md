@@ -1,377 +1,150 @@
 # LandcUserManager
 
-一个功能完善的用户管理系统，提供用户注册、登录、信息管理、第三方登录等功能，支持多种认证方式和灵活的配置管理。
+统一用户中心（LUM）：用户注册、认证、信息管理与第三方登录，是 LandcSSO 的底层用户数据源。
 
-## 功能特性
+## 功能
 
-### 用户管理
-- 用户注册（支持邮箱、手机号、用户名）
-- 用户登录（密码登录、验证码登录、第三方登录）
-- 用户信息查询和更新
-- 密码修改和重置
-- 登录记录管理
-- 设备指纹识别和信任设备管理
-
-### 第三方登录支持
-- 微信登录
-- GitHub登录
-- 支付宝登录
-- 钉钉登录
-
-### 安全特性
-- 设备指纹识别
-- 信任设备管理
-- 异地登录检测
-- 验证码限流
-- 密码强度验证（bcrypt加密）
-
-### 通用功能
-- 邮箱验证码发送
-- 手机验证码发送
-- 短信验证码发送
-- 登录历史记录
+| 领域 | 能力 |
+| --- | --- |
+| 账号 | 注册（用户名/邮箱/手机号）、密码登录、验证码登录、第三方登录 |
+| 资料 | 查询、更新、改密、重置密码 |
+| 安全 | bcrypt 密码哈希、设备指纹、可信设备、新设备与异地登录识别、验证码限流 |
+| 记录 | 登录历史、可信设备列表 |
+| 第三方 | 微信、GitHub、支付宝、钉钉 |
+| 通用 | 邮箱/短信验证码发送 |
 
 ## 技术栈
 
-- **框架**: landc-go/mvc（DI / Gateway / Web）
-- **Web框架**: Gin
-- **数据库**: MySQL (GORM)
-- **缓存**: Redis
-- **日志**: landc-go/log
-- **API规范**: landc-go/api
-- **工具集**: landc-go/tools
-- **配置管理**: YAML
-- **加密**: bcrypt, crypto
-
-## 项目结构
-
-```
-LandcUserManager/
-├── api/                    # API接口定义
-│   ├── common/             # 通用接口（验证码等）
-│   └── user/               # 用户相关接口
-├── dao/                    # 数据访问层接口
-├── internal/                # 内部实现
-│   ├── controller/         # 控制器层
-│   ├── dao_impl/          # DAO实现层
-│   ├── middleware/        # 中间件
-│   └── service_impl/      # 服务实现层
-├── model/                  # 数据模型
-├── sdk/                    # HTTP SDK
-├── service/                # 服务层接口
-├── sqls/                   # SQL脚本
-├── utility/                # 工具包
-│   ├── client/            # HTTP客户端
-│   ├── config/           # 配置管理
-│   ├── db/               # 数据库连接
-│   └── logger/           # 日志管理
-└── LandcUserManager.go     # 主入口文件
-```
+- **框架**：`github.com/LandcLi/landc-go/frame`（配置 / DB / 缓存 / JWT / DI / Web / 健康检查）
+- **Web**：Gin；路由由 `meta.Meta` 标签声明，框架自动注册
+- **数据库**：SQLite（默认，纯 Go 驱动，零外部依赖）或 MySQL（生产）
+- **缓存**：Redis（可选，缺失时自动降级为进程内 LRU）
+- **日志**：`landc-go/log`
 
 ## 快速开始
 
-### 1. 配置文件
-
-复制示例配置文件并修改：
-
 ```bash
-cp config.example.yml config.yml
+cp config.example.yml config.yaml
+go run .
 ```
 
-配置文件包含以下部分：
+默认使用 SQLite，首次启动会在 `data/landc_user_manager.db` 自动建库建表，无需 MySQL/Redis。
+启动后：
+
+```bash
+curl http://127.0.0.1:18081/health
+```
+
+注册一个用户（`authType: PASSWORD` 时无需验证码）：
+
+```bash
+curl -X POST http://127.0.0.1:18081/api/user/register \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "identifier": "admin",
+    "password": "Passw0rd!",
+    "verifyCode": "PASSWORD",
+    "authType": "PASSWORD",
+    "verifyType": "USERNAME",
+    "ip": "127.0.0.1",
+    "deviceFingerprint": "local-dev",
+    "userAgent": "curl"
+  }'
+```
+
+### 切换到 MySQL / Redis（生产）
 
 ```yaml
-server:
-  port: 8080
-  host: "0.0.0.0"
-  read_timeout: 60
-  write_timeout: 60
-  gin_mode: "debug"
-  enable_cors: true
-  user_default_route: true
-
 database:
-  dsn: "user:password@tcp(localhost:3306)/landc_user_manager?charset=utf8mb4&parseTime=True&loc=Local"
-  max_idle_conns: 10
-  max_open_conns: 100
-  conn_max_lifetime: 3600
+  driver: "mysql"
+  dsn: "user:password@tcp(127.0.0.1:3306)/landc_user_manager?charset=utf8mb4&parseTime=True&loc=Local"
+  auto_migrate: false          # 生产由 sqls/init.sql 建表
 
 redis:
   addr: "localhost:6379"
-  password: ""
-  db: 0
-  pool_size: 10
-  min_idle_conns: 5
-  max_retries: 3
-  dial_timeout: 5
-  read_timeout: 5
-  write_timeout: 5
-
-jwt:
-  secret_key: "your-secret-key"
-  private_key_path: ""
-  public_key_path: ""
-  expires_in: 7200
-  refresh_in: 604800
-
-email:
-  host: "smtp.example.com"
-  port: 587
-  username: "your-email@example.com"
-  password: "your-password"
-  from: "your-email@example.com"
-
-sms:
-  api_key: "your-api-key"
-  api_secret: "your-api-secret"
-  sign_name: "your-sign-name"
-  template: "your-template-code"
-
-logger:
-  level: "info"
-  format: "json"
-  output: "stdout"
-
-cache:
-  user_cache_expire: 3600
-
-password:
-  bcrypt_cost: 10
-
-verify_code:
-  length: 6
-  expire_time: 300
-
-http_client:
-  timeout: 30
-
-login_history:
-  retention_days: 90
-
-rate_limit:
-  verify_code_interval: 60
-  max_verify_code_per_day: 10
-
-third_party:
-  wechat:
-    app_id: "your-wechat-app-id"
-    app_secret: "your-wechat-app-secret"
-  github:
-    client_id: "your-github-client-id"
-    client_secret: "your-github-client-secret"
-  alipay:
-    app_id: "your-alipay-app-id"
-    app_secret: "your-alipay-app-secret"
-  dingtalk:
-    app_key: "your-dingtalk-app-key"
-    app_secret: "your-dingtalk-app-secret"
 ```
-
-### 2. 初始化数据库
-
-执行SQL脚本初始化数据库表结构：
 
 ```bash
 mysql -u root -p < sqls/init.sql
 ```
 
-### 3. 启动服务
+### 作为库嵌入（进程内模式）
+
+LandcSSO 通过库模式复用本系统，无需额外 HTTP 跳转：
 
 ```go
-package main
-
 import (
-	"github.com/LandcLi/LandcUserManager"
+    "github.com/LandcLi/LandcUserManager/serverlib"
+    "github.com/LandcLi/landc-go/frame/pkg/web"
 )
 
-func main() {
-	// 使用配置文件初始化
-	engine, err := landcusermanager.InitLUMDefault("config.yml")
-	if err != nil {
-		panic(err)
-	}
-
-	// 启动服务
-	engine.Run(":8080")
+server := web.New()
+if err := serverlib.RegisterToRouter(server); err != nil {  // 含建表、鉴权中间件、第三方适配器
+    return err
 }
 ```
 
-## 使用SDK（远程调用模式）
+宿主进程需先完成框架 bootstrap（配置 / DB / 缓存 / JWT）。`serverlib` 只装配、不接管：
+不会创建 engine、不会调用 `Run`，调用方仍可继续追加自有路由。
 
-当 LandcUserManager 独立部署时，其他服务通过 SDK 远程访问：
+## API
 
-```go
-package main
+所有接口为 `POST` + JSON。
 
-import (
-	"context"
-	"fmt"
-	"github.com/LandcLi/LandcUserManager/api/user"
-	"github.com/LandcLi/LandcUserManager/api/user/v1"
-	"github.com/LandcLi/LandcUserManager/sdk"
-)
+| 路径 | 说明 | 鉴权 |
+| --- | --- | --- |
+| `/api/user/register` | 注册并直接签发令牌 | 否 |
+| `/api/user/login` | 登录（密码 / 验证码 / 第三方） | 否 |
+| `/api/common/send-verify-code` | 发送邮箱或短信验证码 | 否 |
+| `/api/user/reset-password` | 验证码重置密码 | 否 |
+| `/api/user/get-user-info` | 查询当前用户 | 是 |
+| `/api/user/update-user-info` | 更新资料 | 是 |
+| `/api/user/change-password` | 修改密码 | 是 |
+| `/api/user/login-record` | 记录登录历史与可信设备 | 是 |
 
-func main() {
-	// 创建远程 Controller（基于 landc-go/mvc Gateway 模式）
-	remote := sdk.NewRemoteUserController("http://localhost:8080")
+响应约定：成功直接返回业务对象（HTTP 200），不额外包 `{code,data}` 外壳；
+失败返回非 2xx + `{"code":<业务错误码>,"message":"..."}`（框架统一错误体）。
 
-	// 注册为远程实现（替代本地实现）
-	user.UserGateway.Override(remote)
+`Login` 响应中的 `isNewDevice` / `differentLocation` 供 SSO 决定是否下发临时令牌：
+新设备或异地登录需二次兑换，详见 `LandcSSO` 的临时令牌机制。
 
-	// 使用方式与本地完全一致
-	ctrl := user.GetUserController()
-	ctx := context.Background()
-	resp, err := ctrl.Login(ctx, &v1.LoginRequest{
-		Identifier:        "user@example.com",
-		AuthCode:          "123456",
-		VerifyType:        "EMAIL",
-		AuthType:          "VERIFY_CODE",
-		IP:                "127.0.0.1",
-		DeviceFingerprint: "device123",
-		UserAgent:         "Mozilla/5.0",
-	})
-	if err != nil {
-		fmt.Printf("登录失败: %v\n", err)
-		return
-	}
-	fmt.Printf("登录成功，用户ID: %d\n", resp.UserID)
-}
+## 配置
+
+配置项见 `config.example.yml`，要点：
+
+- `database.auto_migrate: true` 时启动自动建表（开发/测试），生产建议关闭；
+- `redis.addr` 留空即使用进程内缓存，仅单实例部署可用；
+- `jwt.secret` 长度需 ≥ 32，生产用环境变量 `LANDC_JWT_SECRET` 注入；
+- `email` / `sms` 未配置时对应验证码渠道不可用（密码登录不受影响）。
+
+## 目录结构
+
+```
+api/                 接口定义（请求/响应 + meta 路由标签）
+dao/                 数据访问接口
+internal/
+  controller/        控制器（注册到 DI）
+  dao_impl/          DAO 实现
+  service_impl/      业务实现
+  middleware/        鉴权中间件
+  cmd/               独立部署入口
+model/               数据模型
+serverlib/           库模式入口（含 EnsureSchema / Models）
+service/             服务接口
+sdk/                 HTTP 远程 SDK
+sqls/                MySQL 初始化脚本
+tests/               单元测试（mock）与 tests/sqlite（SQLite 集成冒烟）
 ```
 
-### 本地/远程切换
+## 测试
 
-本项目基于 `landc-go/mvc` 的 **Gateway 模式**，只需在 `main.go` 中修改注册方式即可切换：
-
-```go
-// 本地模式（默认，通过 init() 自动注册）
-landcusermanager.InitLUMWithConfigAndGin(cfg, ginEngine)
-
-// 远程模式（替换为 SDK 远程调用）
-user.UserGateway.Override(sdk.NewRemoteUserController("http://user-service:8081"))
+```bash
+go test ./...            # 单元测试 + SQLite 集成冒烟
+go vet ./...
 ```
 
-业务代码（如 SSO 的 auth controller）**完全不需要修改**。
-
-## API接口
-
-### 用户接口
-
-| 接口 | 方法 | 路径 | 描述 |
-|------|------|------|------|
-| 登录 | POST | /api/user/login | 用户登录 |
-| 注册 | POST | /api/user/register | 用户注册 |
-| 获取用户信息 | POST | /api/user/get-user-info | 获取用户信息 |
-| 更新用户信息 | POST | /api/user/update-user-info | 更新用户信息 |
-| 修改密码 | POST | /api/user/change-password | 修改密码 |
-| 重置密码 | POST | /api/user/reset-password | 重置密码 |
-| 登录记录 | POST | /api/user/login-record | 记录登录信息 |
-
-### 通用接口
-
-| 接口 | 方法 | 路径 | 描述 |
-|------|------|------|------|
-| 发送验证码 | POST | /api/common/send-verify-code | 发送验证码 |
-
-## 初始化方法
-
-### InitLUMDefault
-
-从配置文件路径初始化，自动加载配置并初始化所有组件。
-
-```go
-engine, err := landcusermanager.InitLUMDefault("config.yml")
-```
-
-### InitLUMWithConfig
-
-使用配置对象初始化，支持自定义配置。
-
-```go
-cfg := &config.Config{
-    // 自定义配置
-}
-engine, err := landcusermanager.InitLUMWithConfig(cfg)
-```
-
-### InitLUMWithConfigAndGin
-
-使用配置对象和自定义Gin引擎初始化，支持更灵活的集成。
-
-```go
-cfg := &config.Config{
-    // 自定义配置
-}
-engine := gin.Default()
-err := landcusermanager.InitLUMWithConfigAndGin(cfg, engine)
-```
-
-## 第三方登录
-
-支持多种第三方登录方式，通过适配器模式实现，方便扩展。
-
-### 微信登录
-
-```go
-wechatAdapter := third_party.NewWechatAdapter(&config.ThirdPartyGlobalConfig{
-    ThirdParty: map[string]map[string]interface{}{
-        "wechat": {
-            "app_id":     "your-app-id",
-            "app_secret": "your-app-secret",
-        },
-    },
-})
-```
-
-### GitHub登录
-
-```go
-githubAdapter := third_party.NewGithubAdapter(&config.ThirdPartyGlobalConfig{
-    ThirdParty: map[string]map[string]interface{}{
-        "github": {
-            "client_id":     "your-client-id",
-            "client_secret": "your-client-secret",
-        },
-    },
-})
-```
-
-## 安全特性
-
-### 设备指纹识别
-- 自动识别用户设备
-- 支持信任设备管理
-- 新设备登录提醒
-
-### 验码限流
-- 防止验证码滥用
-- 支持发送间隔控制
-- 每日发送次数限制
-
-### 密码安全
-- bcrypt加密存储
-- 密码强度验证
-- 支持密码修改和重置
-
-## 贡献
-
-欢迎提交Issue和Pull Request来帮助改进这个项目。
+`tests/sqlite` 使用临时目录中的真实 SQLite 文件，覆盖建表、注册、登录、密码哈希与登录历史落库。
 
 ## 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
-
-## 联系方式
-
-如有问题或建议，欢迎通过以下方式联系：
-
-- 提交 Issue
-- 发送邮件
-
-## 更新日志
-
-### v1.0.0
-- 初始版本发布
-- 支持用户注册、登录、信息管理
-- 支持多种第三方登录
-- 提供完整的HTTP SDK
-- 支持灵活的配置管理
+MIT，见 [LICENSE](LICENSE)。
