@@ -3,6 +3,27 @@
 本项目所有重要变更均记录在此文件中。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.5] - 2026-10-25
+
+### 修复
+
+- **不填邮箱的用户全表只能存在一个（阻断级）**。`users.email` 早期定义为
+  `NOT NULL + UNIQUE`，而邮箱本就可选（用户名注册、手机号注册、第三方登录
+  都可能没有）。SQL 里空串是确定值而不是 NULL，唯一索引把「空串」当成
+  一个真实值去重 —— 第二个用用户名注册的用户直接
+  `UNIQUE constraint failed: users.email`。
+  现在 email 改为普通索引、允许为空；「非空邮箱唯一」由应用层在注册时校验
+  （注册流程本就按 verifyType 查重，覆盖到位）。
+  已有库通过 `EnsureSchema` 幂等删除历史唯一索引（SQLite/PostgreSQL 用
+  `DROP INDEX IF EXISTS`，MySQL 用 `ALTER TABLE ... DROP INDEX` 且忽略
+  「索引不存在」错误），随后自动迁移重建普通索引。
+- `sqls/init.sql` 同步：`email` 改为 `DEFAULT ''` + 普通索引。
+
+### 新增
+
+- 回归测试 `TestRegisterMultipleUsersWithoutEmail`：连续注册 3 个无邮箱用户，
+  直接覆盖上述缺陷。
+
 ## [0.1.4] - 2026-10-25
 
 ### 新增

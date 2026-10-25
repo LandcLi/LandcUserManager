@@ -220,3 +220,42 @@ func TestGetUserInfoByExplicitUserID(t *testing.T) {
 		t.Log("未指定 user_id 且无登录上下文时返回了结果（取决于实现，允许）")
 	}
 }
+
+// TestRegisterMultipleUsersWithoutEmail 验证多个「没有邮箱」的用户可以并存。
+//
+// 历史缺陷：email 是 NOT NULL + UNIQUE，而用户名注册时 email 为空串。
+// SQL 里空串是确定值，不是 NULL —— 于是全表只能有一个无邮箱用户，
+// 第二个用户名注册直接 UNIQUE constraint failed。这不是边角场景：
+// 用户名注册是最常见的注册方式，第二个人注册就会撞上。
+func TestRegisterMultipleUsersWithoutEmail(t *testing.T) {
+	setupSQLiteEnv(t)
+
+	ctx := context.Background()
+	userSvc := service.GetUserService()
+
+	usernames := []string{"no_email_user_a", "no_email_user_b", "no_email_user_c"}
+	ids := make(map[uint]struct{})
+
+	for _, name := range usernames {
+		resp, err := userSvc.Register(ctx, &userv1.RegisterRequest{
+			Identifier:        name,
+			Password:          "Passw0rd!",
+			AuthType:          "PASSWORD",
+			VerifyType:        "USERNAME",
+			IP:                "127.0.0.1",
+			DeviceFingerprint: "fp-" + name,
+			UserAgent:         "multi-no-email-test",
+		})
+		if err != nil {
+			t.Fatalf("注册 %s 失败: %v", name, err)
+		}
+		if _, dup := ids[resp.UserID]; dup {
+			t.Fatalf("用户 ID 重复: %d", resp.UserID)
+		}
+		ids[resp.UserID] = struct{}{}
+	}
+
+	if len(ids) != len(usernames) {
+		t.Errorf("成功注册 %d 个用户，want %d", len(ids), len(usernames))
+	}
+}

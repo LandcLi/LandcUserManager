@@ -11,7 +11,7 @@ USE `landc_user_manager`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '用户ID',
   `username` varchar(50) NOT NULL COMMENT '用户名',
-  `email` varchar(100) NOT NULL COMMENT '邮箱',
+  `email` varchar(100) DEFAULT '' COMMENT '邮箱（可空：用户名/手机号注册、第三方登录可能没有）',
   `password` varchar(100) NOT NULL COMMENT '密码（加密）',
   `nickname` varchar(50) DEFAULT NULL COMMENT '昵称',
   `avatar` varchar(255) DEFAULT NULL COMMENT '头像',
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `updated_at` datetime(3) DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_users_username` (`username`),
-  UNIQUE KEY `idx_users_email` (`email`)
+  KEY `idx_users_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 -- 登录历史表

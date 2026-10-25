@@ -8,9 +8,13 @@ import (
 // username: 唯一标识用户, 用于登录, 限制修改，仅能为字母、数字、下划线，至少8个字符
 // nickname: 可修改的用户显示名称, 可以与username不同
 type User struct {
-	ID        uint      `json:"id" gorm:"primaryKey"`
-	Username  string    `json:"username" gorm:"uniqueIndex;size:50;not null"`
-	Email     string    `json:"email" gorm:"uniqueIndex;size:100;not null"`
+	ID       uint   `json:"id" gorm:"primaryKey"`
+	Username string `json:"username" gorm:"uniqueIndex;size:50;not null"`
+	// Email 可空：用户名注册、手机号注册、第三方登录都可能没有邮箱。
+	// 早期这里是 NOT NULL + UNIQUE，而空串在 SQL 里是确定值，导致「不填邮箱的
+	// 用户」全表只能存在一个 —— 第二个用户名注册就 UNIQUE constraint failed。
+	// 现在改为普通索引，非空邮箱的唯一性由应用层在注册/改绑时校验。
+	Email     string    `json:"email" gorm:"index;size:100"`
 	Password  string    `json:"-" gorm:"size:100;not null"`
 	Nickname  string    `json:"nickname" gorm:"size:50"`
 	Avatar    string    `json:"avatar" gorm:"size:255"`
