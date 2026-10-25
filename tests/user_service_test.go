@@ -105,8 +105,9 @@ func TestLoginPassword_UserNotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for non-existent user")
 	}
-	if !errors.Is(err, lumerrors.ErrUserNotFound) {
-		t.Fatalf("expected ErrUserNotFound, got: %v", err)
+	// 安全语义：用户不存在与密码错误必须返回同一错误，防用户名枚举。
+	if !errors.Is(err, lumerrors.ErrInvalidCredentials) {
+		t.Fatalf("expected ErrInvalidCredentials, got: %v", err)
 	}
 }
 
@@ -120,8 +121,9 @@ func TestLoginPassword_WrongPassword(t *testing.T) {
 		AuthType:   constants.AuthTypePassword,
 		VerifyType: constants.VerifyTypeUsername,
 	})
-	if err == nil || !errors.Is(err, lumerrors.ErrPasswordIncorrect) {
-		t.Fatalf("expected ErrPasswordIncorrect error, got: %v", err)
+	// 安全语义：密码错误与用户不存在返回同一错误。
+	if err == nil || !errors.Is(err, lumerrors.ErrInvalidCredentials) {
+		t.Fatalf("expected ErrInvalidCredentials error, got: %v", err)
 	}
 }
 
@@ -219,8 +221,8 @@ func TestLoginVerifyCode_UserNotFound_NoAutoCreate(t *testing.T) {
 		UserAgent:         "test-agent",
 		IP:                "127.0.0.1",
 	})
-	if err == nil || !errors.Is(err, lumerrors.ErrUserNotFound) {
-		t.Fatalf("expected ErrUserNotFound (no auto-create), got: %v", err)
+	if err == nil || !errors.Is(err, lumerrors.ErrInvalidCredentials) {
+		t.Fatalf("expected ErrInvalidCredentials (no auto-create), got: %v", err)
 	}
 	// Verify user was NOT created
 	if _, err := mockUserDao.FindByEmail(context.Background(), "newuser@example.com"); err == nil {
@@ -628,9 +630,10 @@ func TestSendResetPasswordCode_Success(t *testing.T) {
 
 func TestSendResetPasswordCode_UserNotFound(t *testing.T) {
 	reset()
+	// 安全语义：邮箱未注册时不报错，防邮箱枚举（统一提示「如果该邮箱已注册，验证码已发送」）。
 	err := getUserService().SendResetPasswordCode(context.Background(), "noone@example.com")
-	if err == nil {
-		t.Fatal("expected error for non-existent user")
+	if err != nil {
+		t.Fatalf("expected no error for non-existent user (防枚举), got: %v", err)
 	}
 }
 

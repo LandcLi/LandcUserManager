@@ -103,6 +103,17 @@ rate_limit:
   verify_code_interval: 60    # 发送验证码最小间隔（秒）
   max_verify_code_per_day: 10 # 每日发送验证码上限
 
+# 登录安全配置（失败计数 + 账号锁定）
+#
+# 按「标识符」（邮箱/手机号/用户名）计数，识别符不存在也照样计数，
+# 否则「猜用户名」这条路完全不受限制。
+# 计数与锁定状态保存在缓存里：配了 Redis 则多实例共享，否则仅进程内有效。
+login_security:
+  enabled: true               # 关闭后只记录失败历史，不锁定
+  max_failed_attempts: 5      # 连续失败多少次锁定（<=0 视为关闭锁定）
+  lock_minutes: 15            # 锁定时长（到期自动解锁，避免被恶意锁死）
+  failure_window_minutes: 15  # 失败计数窗口，窗口内无新失败则清零
+
 # 第三方登录配置
 third_party:
   wechat:

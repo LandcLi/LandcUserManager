@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- 登录历史表
 CREATE TABLE IF NOT EXISTS `login_histories` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '登录历史ID',
-  `user_id` bigint unsigned NOT NULL COMMENT '用户ID',
+  `user_id` bigint unsigned NOT NULL COMMENT '用户ID（0 表示标识符不存在的失败尝试）',
+  `identifier` varchar(100) DEFAULT NULL COMMENT '登录标识符（邮箱/手机号/用户名，小写归一化）',
   `ip` varchar(50) DEFAULT NULL COMMENT 'IP地址',
   `device_fingerprint` varchar(255) DEFAULT NULL COMMENT '设备指纹',
   `user_agent` varchar(255) DEFAULT NULL COMMENT '用户代理',
@@ -38,7 +39,8 @@ CREATE TABLE IF NOT EXISTS `login_histories` (
   `device` varchar(100) DEFAULT NULL COMMENT '设备',
   `location` varchar(100) DEFAULT NULL COMMENT '位置',
   PRIMARY KEY (`id`),
-  KEY `idx_login_histories_user_id` (`user_id`)
+  KEY `idx_login_histories_user_id` (`user_id`),
+  KEY `idx_login_histories_identifier` (`identifier`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='登录历史表';
 
 -- 第三方用户元数据表

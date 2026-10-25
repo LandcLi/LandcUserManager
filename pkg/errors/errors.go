@@ -4,7 +4,13 @@
 // 支持 errors.Is()/errors.As() 判断（返回同一包级变量指针，== 恒成立）。
 package lumerrors
 
-import "github.com/LandcLi/landc-go/api/core"
+import (
+	"fmt"
+	"math"
+	"time"
+
+	"github.com/LandcLi/landc-go/api/core"
+)
 
 // ---- 通用错误 ----
 var (
@@ -31,6 +37,36 @@ var (
 	ErrResetPasswordFail   = core.NewError(core.ErrorCodeDatabaseError, "reset password failed")
 	ErrRegisterTokenFailed = core.NewError(core.ErrorCodeInternalServerError, "register token generation failed")
 )
+
+// ---- 登录安全错误 ----
+var (
+	// ErrInvalidCredentials 是登录场景对外统一的「凭据不正确」错误。
+	//
+	// 「用户不存在」与「密码错误」必须返回**同一个**错误值和同一段文案，
+	// 否则攻击者可以用不同响应把用户名批量枚举出来（code 40400 vs 40100 一眼可辨）。
+	// 需要区分时只看服务端日志，不要回给客户端。
+	ErrInvalidCredentials = core.NewError(core.ErrorCodeUnauthorized, "invalid credentials")
+)
+
+// ErrorCodeAccountLocked 是「账号因连续登录失败被临时锁定」的业务错误码。
+// 取自定义区间（60000-99999），客户端可据此弹出「请 X 分钟后再试」，
+// 而不必去解析文案。
+const ErrorCodeAccountLocked core.ErrorCode = core.ErrorCodeCustomMin + 429
+
+// NewAccountLockedError 构造带剩余锁定时间的锁定错误。
+// remaining <= 0 时按「已到期」处理，返回 nil 交回调用方（正常流程不该走到这一步）。
+func NewAccountLockedError(remaining time.Duration) *core.Error {
+	if remaining <= 0 {
+		return nil
+	}
+	// 向上取整到分钟：剩 30 秒也应该提示「1 分钟」，不能显示「0 分钟」。
+	minutes := int(math.Ceil(remaining.Minutes()))
+	return &core.Error{
+		Code:    ErrorCodeAccountLocked,
+		Message: fmt.Sprintf("account locked due to too many failed login attempts, retry in %d minute(s)", minutes),
+		Details: map[string]interface{}{"retry_after_seconds": int(math.Ceil(remaining.Seconds()))},
+	}
+}
 
 // ---- 验证码相关错误 ----
 var (

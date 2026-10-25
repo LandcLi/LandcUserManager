@@ -3,6 +3,42 @@
 本项目所有重要变更均记录在此文件中。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.6] - 2026-10-26
+
+### 新增
+
+- **登录失败计数与账号临时锁定**。密码登录按标识符（邮箱/手机号/用户名，
+  大小写不敏感）累计连续失败次数，达到 `login_security.max_failed_attempts`
+  （默认 5）即锁定 `lock_minutes`（默认 15）分钟，到期自动解锁（避免被恶意
+  锁死造成拒绝服务）。锁定期内**正确密码也拒绝**，返回自定义错误码 `60429`
+  并带 `retry_after_seconds` 详情。计数与锁定状态存于框架缓存（有 Redis
+  则多实例共享，否则仅进程内）。
+  - 计数窗口 `failure_window_minutes` 内无新失败自动清零；成功登录清零。
+  - 改密 / 重置密码（已证明身份）会解除锁定。
+  - 新增 `utility/loginguard` 包，缓存未初始化时退化为进程内计数。
+- **失败登录留痕**。`login_histories` 新增 `identifier` 字段（含索引），
+  失败记录带标识符与 IP，便于撞库/枚举取证；`user_id=0` 表示「标识符不存在」
+  的失败尝试。锁定期内被直接拒绝的请求不落库，防止放大攻击撑爆历史表。
+
+### 修复
+
+- **用户名枚举漏洞**。`/api/user/login` 此前对「用户不存在」返回 code `40400`
+  "user not found"、对「密码错误」返回 code `40100` "password incorrect"，
+  两个码两段文案，攻击者拿一份用户名清单即可筛出哪些账号真实存在。现在统一
+  返回 `ErrInvalidCredentials`（code `40100`），验证码登录的用户不存在分支同步
+  收敛，仅日志区分。
+- **邮箱枚举漏洞**。`SendResetPasswordCode` 此前对未注册邮箱直接报错，
+  等于一个无需登录的邮箱枚举接口。现在静默返回成功。
+- **`password.bcrypt_cost` 配置形同虚设**。三处生成密码哈希处硬编码
+  `bcrypt.DefaultCost`，配置项既不生效也无法在测试里调低提速。现在统一读配置
+  并夹到 `bcrypt` 合法区间。
+
+### 变更
+
+- `utility/config` 新增 `TryGetConfig`（无配置时返回 nil 而非 panic），
+  供 mock 单元测试与库嵌入场景降级使用；`login_security` 配置「先填默认值再
+  反序列化」，避免省略的键被静默置零。
+
 ## [0.1.5] - 2026-10-25
 
 ### 修复

@@ -44,7 +44,10 @@ type UserDto struct {
 }
 
 type LoginRecordRequest struct {
-	UserID            uint   `json:"userId" binding:"required"`
+	UserID uint `json:"userId" binding:"required"`
+	// Identifier 登录使用的标识符（邮箱/手机号/用户名）。
+	// 由服务端内部填充，前端调用 /api/user/login-record 时不会带（也不该带）。
+	Identifier        string `json:"identifier"`
 	VerifyType        string `json:"verifyType" binding:"required,oneof=EMAIL PHONE USERNAME"`
 	Remark            string `json:"remark" binding:"required,min=3,max=255"`
 	IP                string `json:"ip" binding:"required,ip"`
