@@ -3,6 +3,17 @@
 本项目所有重要变更均记录在此文件中。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.4] - 2026-10-25
+
+### 新增
+
+- **`GetUserInfoRequest.UserID`（可选）**：允许服务间调用按 user_id 取用户档案。
+  `LandcSSO` 的 OIDC `/userinfo` 端点需要按令牌里的 `sub` 反查用户信息，
+  而那里没有「当前登录用户」的上下文，原接口只能从 JWT claims 取用户、
+  在服务间调用场景完全不可用。
+  不传 `user_id` 时行为不变（取当前登录用户）。普通前端调用不要传，
+  否则等于把「查谁」的决定权交给客户端。
+
 ## [0.1.3] - 2026-10-25
 
 ### 变更

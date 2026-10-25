@@ -60,7 +60,14 @@ func (uc *userController) LoginRecord(ctx context.Context, req *v1.LoginRecordRe
 }
 
 func (uc *userController) GetUserInfo(ctx context.Context, req *v1.GetUserInfoRequest) (*v1.GetUserInfoResponse, error) {
-	user, err := service.GetUserService().GetUserInfo(ctx, currentUserID(ctx))
+	// 服务间调用（如 SSO 的 OIDC /userinfo）显式指定 user_id；
+	// 否则取 Auth 中间件注入的当前登录用户。
+	userID := req.UserID
+	if userID == 0 {
+		userID = currentUserID(ctx)
+	}
+
+	user, err := service.GetUserService().GetUserInfo(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

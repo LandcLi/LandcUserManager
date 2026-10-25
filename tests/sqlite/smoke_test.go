@@ -17,6 +17,7 @@ import (
 	"github.com/LandcLi/LandcUserManager/serverlib"
 	"github.com/LandcLi/LandcUserManager/service"
 
+	userapi "github.com/LandcLi/LandcUserManager/api/user"
 	userv1 "github.com/LandcLi/LandcUserManager/api/user/v1"
 )
 
@@ -170,5 +171,52 @@ func TestSQLiteRegisterAndLogin(t *testing.T) {
 	}
 	if count == 0 {
 		t.Error("expected login history recorded")
+	}
+}
+
+// TestGetUserInfoByExplicitUserID 验证服务间调用可以按 user_id 取用户档案。
+//
+// 场景：LandcSSO 的 OIDC /userinfo 端点按令牌里的 sub 取用户信息，
+// 此时没有「当前登录用户」的概念，必须靠请求体显式指定。
+func TestGetUserInfoByExplicitUserID(t *testing.T) {
+	setupSQLiteEnv(t)
+
+	ctx := context.Background()
+	userSvc := service.GetUserService()
+
+	const (
+		username = "explicit_lookup_user"
+		password = "Passw0rd!"
+	)
+
+	regResp, err := userSvc.Register(ctx, &userv1.RegisterRequest{
+		Identifier:        username,
+		Password:          password,
+		AuthType:          "PASSWORD",
+		VerifyType:        "USERNAME",
+		IP:                "127.0.0.1",
+		DeviceFingerprint: "explicit-lookup-fp",
+		UserAgent:         "explicit-lookup-test",
+	})
+	if err != nil {
+		t.Fatalf("register: %v", err)
+	}
+
+	// 走 controller：请求体里显式给 user_id
+	ctrl := userapi.GetUserController()
+	info, err := ctrl.GetUserInfo(ctx, &userv1.GetUserInfoRequest{UserID: regResp.UserID})
+	if err != nil {
+		t.Fatalf("GetUserInfo(explicit user_id): %v", err)
+	}
+	if info.ID != regResp.UserID {
+		t.Errorf("返回的 ID = %d, want %d", info.ID, regResp.UserID)
+	}
+	if info.Username != username {
+		t.Errorf("返回的 Username = %q, want %q", info.Username, username)
+	}
+
+	// 不指定且 context 里没有登录用户时，应退化为 0 而不是panic
+	if _, err := ctrl.GetUserInfo(ctx, &userv1.GetUserInfoRequest{}); err == nil {
+		t.Log("未指定 user_id 且无登录上下文时返回了结果（取决于实现，允许）")
 	}
 }
