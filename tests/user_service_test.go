@@ -7,8 +7,8 @@ import (
 
 	"github.com/LandcLi/LandcUserManager/api/user/v1"
 	"github.com/LandcLi/LandcUserManager/model"
-	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	constants "github.com/LandcLi/LandcUserManager/pkg/consts"
+	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -273,7 +273,7 @@ func TestLoginThirdParty_MatchByUnionID(t *testing.T) {
 	})
 	RegisterMockThirdPartyAdapter("wechat", NewMockThirdPartyAdapter(&model.ThirdPartyUser{
 		Provider:    "wechat",
-		OpenID:      "wx-open-new", // different from existing
+		OpenID:      "wx-open-new",  // different from existing
 		UnionID:     "wx-union-456", // matches existing by union
 		AccessToken: "wx-token",
 	}))
@@ -326,8 +326,8 @@ func TestLoginThirdParty_MissingAccessToken(t *testing.T) {
 	// THIRD_PARTY 模式 AccessToken 必填（service 层分支校验兜底）
 	reset()
 	_, err := getUserService().Login(context.Background(), &v1.LoginRequest{
-		AuthType:   constants.AuthTypeThirdParty,
-		VerifyType: "github",
+		AuthType:    constants.AuthTypeThirdParty,
+		VerifyType:  "github",
 		AccessToken: "",
 	})
 	if err == nil || !errors.Is(err, lumerrors.ErrInvalidRequestParams) {

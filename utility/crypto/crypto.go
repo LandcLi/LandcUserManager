@@ -17,8 +17,8 @@ const (
 )
 
 var (
-	keyOnce sync.Once
-	cipher  *security.Cipher
+	keyOnce   sync.Once
+	cipher    *security.Cipher
 	cipherErr error
 )
 

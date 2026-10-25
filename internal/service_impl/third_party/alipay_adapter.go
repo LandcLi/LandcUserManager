@@ -90,17 +90,17 @@ func (a *alipayAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 
 	return &model.ThirdPartyUser{
 		AccessToken: accessToken,
-		Provider: "alipay",
-		OpenID:   userInfoData.AlipayUserInfoShareResponse.UserId,
-		UnionID:  userInfoData.AlipayUserInfoShareResponse.UserId,
-		Nickname: userInfoData.AlipayUserInfoShareResponse.NickName,
-		Avatar:   userInfoData.AlipayUserInfoShareResponse.Avatar,
-		Email:    userInfoData.AlipayUserInfoShareResponse.Email,
-		Phone:    "",
-		Gender:   userInfoData.AlipayUserInfoShareResponse.Gender,
-		Country:  "",
-		Province: userInfoData.AlipayUserInfoShareResponse.Province,
-		City:     userInfoData.AlipayUserInfoShareResponse.City,
+		Provider:    "alipay",
+		OpenID:      userInfoData.AlipayUserInfoShareResponse.UserId,
+		UnionID:     userInfoData.AlipayUserInfoShareResponse.UserId,
+		Nickname:    userInfoData.AlipayUserInfoShareResponse.NickName,
+		Avatar:      userInfoData.AlipayUserInfoShareResponse.Avatar,
+		Email:       userInfoData.AlipayUserInfoShareResponse.Email,
+		Phone:       "",
+		Gender:      userInfoData.AlipayUserInfoShareResponse.Gender,
+		Country:     "",
+		Province:    userInfoData.AlipayUserInfoShareResponse.Province,
+		City:        userInfoData.AlipayUserInfoShareResponse.City,
 	}, nil
 }
 

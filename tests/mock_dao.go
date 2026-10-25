@@ -265,7 +265,8 @@ func (m *MockLoginHistoryDao) FindLatestByUserID(ctx context.Context, userID uin
 	return latest, nil
 }
 
-func (m *MockLoginHistoryDao) Delete(ctx context.Context, id uint) error {	m.mu.Lock()
+func (m *MockLoginHistoryDao) Delete(ctx context.Context, id uint) error {
+	m.mu.Lock()
 	defer m.mu.Unlock()
 	for i, r := range m.records {
 		if r.ID == id {

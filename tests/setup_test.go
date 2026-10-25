@@ -8,8 +8,8 @@ import (
 	frameauth "github.com/LandcLi/landc-go/frame/pkg/auth"
 
 	"github.com/LandcLi/LandcUserManager/dao"
-	"github.com/LandcLi/LandcUserManager/service"
 	userimpl "github.com/LandcLi/LandcUserManager/internal/service_impl/user"
+	"github.com/LandcLi/LandcUserManager/service"
 )
 
 var (

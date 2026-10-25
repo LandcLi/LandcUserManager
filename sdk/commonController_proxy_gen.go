@@ -30,4 +30,3 @@ type commonControllerProxy struct {
 func (p *commonControllerProxy) SendVerifyCode(ctx context.Context, req *v1.SendVerifyCodeRequest) (*v1.SendVerifyCodeResponse, error) {
 	return di.Call[v1.SendVerifyCodeResponse](p.client, ctx, "SendVerifyCode", req)
 }
-

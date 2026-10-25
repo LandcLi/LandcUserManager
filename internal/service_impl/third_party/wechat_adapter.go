@@ -78,17 +78,17 @@ func (a *wechatAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 
 	return &model.ThirdPartyUser{
 		AccessToken: accessToken,
-		Provider: "wechat",
-		OpenID:   userInfoData.OpenID,
-		UnionID:  userInfoData.UnionID,
-		Nickname: userInfoData.Nickname,
-		Avatar:   userInfoData.HeadImgURL,
-		Email:    "",
-		Phone:    "",
-		Gender:   gender,
-		Country:  userInfoData.Country,
-		Province: userInfoData.Province,
-		City:     userInfoData.City,
+		Provider:    "wechat",
+		OpenID:      userInfoData.OpenID,
+		UnionID:     userInfoData.UnionID,
+		Nickname:    userInfoData.Nickname,
+		Avatar:      userInfoData.HeadImgURL,
+		Email:       "",
+		Phone:       "",
+		Gender:      gender,
+		Country:     userInfoData.Country,
+		Province:    userInfoData.Province,
+		City:        userInfoData.City,
 	}, nil
 }
 

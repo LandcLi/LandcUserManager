@@ -54,4 +54,3 @@ func (p *userControllerProxy) ChangePassword(ctx context.Context, req *v1.Change
 func (p *userControllerProxy) ResetPassword(ctx context.Context, req *v1.ResetPasswordRequest) (*v1.ResetPasswordResponse, error) {
 	return di.Call[v1.ResetPasswordResponse](p.client, ctx, "ResetPassword", req)
 }
-

@@ -106,17 +106,17 @@ func (a *githubAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCo
 
 	return &model.ThirdPartyUser{
 		AccessToken: accessToken,
-		Provider: "github",
-		OpenID:   fmt.Sprintf("%d", userInfoData.ID),
-		UnionID:  fmt.Sprintf("%d", userInfoData.ID),
-		Nickname: nickname,
-		Avatar:   userInfoData.AvatarURL,
-		Email:    userInfoData.Email,
-		Phone:    "",
-		Gender:   "",
-		Country:  "",
-		Province: "",
-		City:     userInfoData.Location,
+		Provider:    "github",
+		OpenID:      fmt.Sprintf("%d", userInfoData.ID),
+		UnionID:     fmt.Sprintf("%d", userInfoData.ID),
+		Nickname:    nickname,
+		Avatar:      userInfoData.AvatarURL,
+		Email:       userInfoData.Email,
+		Phone:       "",
+		Gender:      "",
+		Country:     "",
+		Province:    "",
+		City:        userInfoData.Location,
 	}, nil
 }
 
