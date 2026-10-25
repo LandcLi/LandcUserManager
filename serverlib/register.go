@@ -37,12 +37,15 @@ func WithWebOptions(opts ...web.RegisterOption) Option {
 // RegisterToRouter 装配 user 服务的默认实现并注册到 server。
 // 只装配、不接管：不创建 engine、不调用 Run；调用方可继续追加自有路由。
 // 前置条件：宿主进程已完成 landc-go 框架 bootstrap（配置/DB/缓存/JWT）。
-func RegisterToRouter(s *web.Server, opts ...Option) error {
-	o := &options{authEnabled: true}
-	for _, opt := range opts {
-		opt(o)
-	}
-
+// Install 只做「装配」：确保表结构、初始化第三方登录适配器，
+// 把本系统的控制器实现留在 DI 容器中，**不**挂中间件、**不**注册 HTTP 路由。
+//
+// 适用场景：宿主服务（如 LandcSSO）想通过 `user.UserGateway.Get()` 在同一进程内
+// 直接调用用户服务，而不希望 LUM 的鉴权中间件与路由影响宿主的 URL 空间与中间件链。
+// 需要 LUM 同时对外提供 HTTP 接口时改用 RegisterToRouter。
+//
+// 幂等，可重复调用。
+func Install() error {
 	// 防御性检查：框架配置未初始化时返回友好错误，而非 panic
 	if frameconfig.GetConfig() == nil {
 		return fmt.Errorf("serverlib: framework not bootstrapped; initialize global config first")
@@ -54,17 +57,35 @@ func RegisterToRouter(s *web.Server, opts ...Option) error {
 		return err
 	}
 
-	// 补全（相对 gen lib 骨架）：全局鉴权中间件，必须在 RegisterHandler 之前挂载（与独立部署一致）
+	// 第三方登录适配器（未配置 third_party 时为 no-op）
+	cfg := config.GetConfig()
+	if cfg != nil {
+		if err := service.InitWithConfig(&cfg.ThirdParty); err != nil {
+			return fmt.Errorf("serverlib: init third-party adapters: %w", err)
+		}
+	}
+	return nil
+}
+
+// RegisterToRouter 装配默认实现并把控制器注册到 server。
+// 只装配、不接管：不创建 engine、不调用 Run；调用方可继续追加自有路由。
+// 前置条件：宿主进程已完成 landc-go 框架 bootstrap（配置/DB/缓存/JWT）。
+func RegisterToRouter(s *web.Server, opts ...Option) error {
+	o := &options{authEnabled: true}
+	for _, opt := range opts {
+		opt(o)
+	}
+
+	if err := Install(); err != nil {
+		return err
+	}
+
+	// 全局鉴权中间件，必须在 RegisterHandler 之前挂载（与独立部署一致）
 	if o.authEnabled {
 		s.Engine().Use(middleware.Auth())
 	}
 
-	// 补全（相对 gen lib 骨架）：第三方登录适配器初始化
-	if err := service.InitWithConfig(&config.GetConfig().ThirdParty); err != nil {
-		return fmt.Errorf("serverlib: init third-party adapters: %w", err)
-	}
-
-	// 控制器清单（gen lib 提示补全）：common + user
+	// 控制器清单：common + user
 	if err := s.RegisterHandler(common.GetCommonController(), o.webOpts...); err != nil {
 		return err
 	}
