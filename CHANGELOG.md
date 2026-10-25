@@ -3,7 +3,17 @@
 本项目所有重要变更均记录在此文件中。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased]
+## [0.1.2] - 2026-10-25
+
+> 说明：本段同时收录了 v0.1.1 发布时未单独记录的安全修复内容。
+
+### 变更
+
+- 依赖升级到 `landc-go/frame v0.8.5`。该版本修复了两个会让服务
+  「看起来在跑、实际不可用」的框架缺陷：配置文件省略字段退化为零值
+  （导致 `health_check.enabled`、`use_default_routes` 被静默关闭），
+  以及 JWT 鉴权中间件拦截健康检查端点。升级后 `/health`、`/ready`
+  无需 Token 即可访问，编排系统探针可用。
 
 ### 修复（安全）
 
