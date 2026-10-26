@@ -114,6 +114,18 @@ login_security:
   lock_minutes: 15            # 锁定时长（到期自动解锁，避免被恶意锁死）
   failure_window_minutes: 15  # 失败计数窗口，窗口内无新失败则清零
 
+# 服务间调用凭证
+#
+# LandcSSO 的 OIDC /userinfo 要按令牌里的 sub 读取用户档案，那是服务间调用，
+# 手上没有「当前登录用户」的 token，走用户 JWT 无处可带。配置共享密钥后，
+# 携带 X-Service-Key 的内部服务请求直接放行；外部客户端没有这个密钥，
+# 仍然必须带 JWT。
+#
+# 留空表示不启用 —— 此时所有非公开路径一律要求 JWT（漏配只会更严格）。
+# 该值必须与调用方（如 LandcSSO 的 user_manager.serviceKey）完全一致。
+service_auth:
+  key: ""
+
 # 第三方登录配置
 third_party:
   wechat:

@@ -28,7 +28,19 @@ type Config struct {
 	LoginHistory  LoginHistoryConfig
 	RateLimit     RateLimitConfig
 	LoginSecurity LoginSecurityConfig
+	ServiceAuth   ServiceAuthConfig
 	ThirdParty    ThirdPartyGlobalConfig
+}
+
+// ServiceAuthConfig 服务间调用的内部凭证。
+//
+// 背景：LandcSSO 需要从本服务读取用户档案（OIDC /userinfo 用令牌里的 sub 查档案），
+// 那是没有「当前登录用户 token」的服务间调用，走用户 JWT 无处可带。给一个共享密钥，
+// 服务间调用带 X-Service-Key 即可通过鉴权；外部客户端没有这个密钥，仍必须带 JWT。
+//
+// Key 为空表示不启用：此时所有非公开路径一律要求 JWT（不会因为漏配而放开）。
+type ServiceAuthConfig struct {
+	Key string `yaml:"key" json:"key"`
 }
 
 type ServerConfig struct {
@@ -175,6 +187,7 @@ func extractLUMConfig(fc *frameconfig.Config) *Config {
 	_ = fc.UnmarshalOther("login_history", &cfg.LoginHistory)
 	_ = fc.UnmarshalOther("rate_limit", &cfg.RateLimit)
 	_ = fc.UnmarshalOther("login_security", &cfg.LoginSecurity)
+	_ = fc.UnmarshalOther("service_auth", &cfg.ServiceAuth)
 	_ = fc.UnmarshalOther("third_party", &cfg.ThirdParty)
 
 	// 历史遗留：password.bcrypt_cost 以前根本没被读取，代码里写死 DefaultCost，
