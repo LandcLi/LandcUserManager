@@ -103,6 +103,7 @@ func (s *userServiceImpl) Login(ctx context.Context, req *v1.LoginRequest) (*v1.
 
 	return &v1.LoginResponse{
 		UserID:            user.ID,
+		Username:          user.Username,
 		DifferentLocation: isDifferentLocation,
 		IsNewDevice:       isNewDevice,
 		Token:             accessToken,

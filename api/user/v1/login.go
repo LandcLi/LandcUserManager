@@ -27,4 +27,10 @@ type LoginResponse struct {
 	IsNewDevice       bool   `json:"isNewDevice"`
 	Token             string `json:"token"`
 	RefreshToken      string `json:"refreshToken"`
+	// Username 用户名。
+	//
+	// 调用方（如 LandcSSO）签发自己的令牌时需要把用户名写进 claims。
+	// 此前这里不返回用户名，SSO 只能给令牌填空串，导致下游拿到
+	// userID 有效但 username 为空的令牌，按用户名做的逻辑全部失效。
+	Username string `json:"username"`
 }
