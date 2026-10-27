@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/LandcLi/LandcUserManager/model"
 	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	"github.com/LandcLi/LandcUserManager/service"
+	clientutil "github.com/LandcLi/LandcUserManager/utility/client"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
 )
 
@@ -59,7 +59,7 @@ func (a *dingtalkAdapter) FetchUserInfo(ctx context.Context, accessToken, verify
 	req.Header.Set("x-acs-dingtalk-access-token", accessToken)
 
 	// 发送请求
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := clientutil.GetHTTPClient()
 	userInfoResp, err := client.Do(req)
 	if err != nil {
 		logger.Errorf(ctx, "获取钉钉用户信息失败: %v", err)

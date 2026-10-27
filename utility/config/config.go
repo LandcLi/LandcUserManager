@@ -157,6 +157,27 @@ func defaultLoginHistory() LoginHistoryConfig {
 	return LoginHistoryConfig{RetentionDays: defaultLoginHistoryRetentionDays}
 }
 
+// 验证码默认值。与 tools/verifycode 的内建默认值一致 ——
+// 之所以在这一层也给一遍，是因为下面这些值现在会显式传给 Manager，
+// 传 0 会真的生成「0 位验证码」而不是回落默认。
+const (
+	defaultVerifyCodeLength   = 6
+	defaultVerifyCodeExpire   = 300 // 秒
+	defaultVerifyCodeInterval = 60  // 秒
+	defaultVerifyCodeDailyMax = 10  // 次/天
+)
+
+func defaultVerifyCode() VerifyCodeConfig {
+	return VerifyCodeConfig{Length: defaultVerifyCodeLength, ExpireTime: defaultVerifyCodeExpire}
+}
+
+func defaultRateLimit() RateLimitConfig {
+	return RateLimitConfig{
+		VerifyCodeInterval:  defaultVerifyCodeInterval,
+		MaxVerifyCodePerDay: defaultVerifyCodeDailyMax,
+	}
+}
+
 // GetConfig 从框架全局配置中提取 LUM 类型化配置。
 // 配置由框架全权加载和管理，此函数仅做类型转换。
 // 框架配置未初始化时 panic —— 适合 main 启动路径上的「必须有配置」调用点。
@@ -199,6 +220,8 @@ func extractLUMConfig(fc *frameconfig.Config) *Config {
 		// 先填默认值，再由 UnmarshalOther 覆盖配置里显式给出的键。
 		LoginSecurity: defaultLoginSecurity(),
 		LoginHistory:  defaultLoginHistory(),
+		VerifyCode:    defaultVerifyCode(),
+		RateLimit:     defaultRateLimit(),
 	}
 
 	// other.server：本系统在框架 server 段之外的扩展项。

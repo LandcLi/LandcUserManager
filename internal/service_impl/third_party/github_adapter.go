@@ -9,6 +9,7 @@ import (
 	"github.com/LandcLi/LandcUserManager/model"
 	lumerrors "github.com/LandcLi/LandcUserManager/pkg/errors"
 	"github.com/LandcLi/LandcUserManager/service"
+	clientutil "github.com/LandcLi/LandcUserManager/utility/client"
 	"github.com/LandcLi/LandcUserManager/utility/logger"
 )
 
@@ -25,7 +26,7 @@ type githubAdapter struct {
 
 func (a *githubAdapter) FetchUserInfo(ctx context.Context, accessToken, verifyCode string) (*model.ThirdPartyUser, error) {
 	// 实现GitHub用户信息拉取逻辑（使用config中的参数）
-	client := &http.Client{}
+	client := clientutil.GetHTTPClient()
 	// 2. 使用access_token获取用户信息
 	userInfoURL := "https://api.github.com/user"
 

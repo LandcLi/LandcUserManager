@@ -1,6 +1,8 @@
 package serverlib
 
 import (
+	"time"
+
 	"fmt"
 
 	ginmw "github.com/LandcLi/landc-go/api/middleware/gin"
@@ -13,6 +15,7 @@ import (
 	"github.com/LandcLi/LandcUserManager/api/user"
 	"github.com/LandcLi/LandcUserManager/internal/middleware"
 	"github.com/LandcLi/LandcUserManager/service"
+	outboundclient "github.com/LandcLi/LandcUserManager/utility/client"
 	"github.com/LandcLi/LandcUserManager/utility/config"
 
 	_ "github.com/LandcLi/LandcUserManager/internal" // 触发默认实现注册链（di.Provide）
@@ -88,6 +91,11 @@ func RegisterToRouter(s *web.Server, opts ...Option) error {
 	if cfg := config.TryGetConfig(); cfg != nil {
 		if cfg.Server.GinMode != "" {
 			gin.SetMode(cfg.Server.GinMode)
+		}
+		// 出站 HTTP 超时：http_client.timeout 此前从未被读取，
+		// adapter 各自 new client（GitHub 那个甚至没有超时）。
+		if cfg.HTTPClient.Timeout > 0 {
+			outboundclient.SetHTTPTimeout(time.Duration(cfg.HTTPClient.Timeout) * time.Second)
 		}
 		// 安全响应头：配置里一直有开关，但代码从未实现，响应里一个头都没有。
 		// 框架提供了 SecurityHeaders 中间件，这里按配置挂上。
