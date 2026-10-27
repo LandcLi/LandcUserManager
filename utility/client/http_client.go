@@ -11,7 +11,7 @@ import (
 const defaultHTTPTimeout = 10 * time.Second
 
 var (
-	httpClientOnce sync.Once
+	httpClientOnce   sync.Once
 	sharedHTTPClient *http.Client
 
 	// httpTimeout 由 SetHTTPTimeout 注入。

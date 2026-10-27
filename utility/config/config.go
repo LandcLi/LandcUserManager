@@ -227,7 +227,7 @@ func extractLUMConfig(fc *frameconfig.Config) *Config {
 	// other.server：本系统在框架 server 段之外的扩展项。
 	// gin_mode 此前只声明了字段、从未赋值，等于配了不生效。
 	var serverOther struct {
-		GinMode         string               `json:"gin_mode"`
+		GinMode         string                `json:"gin_mode"`
 		SecurityHeaders SecurityHeadersConfig `json:"security_headers"`
 	}
 	_ = fc.UnmarshalOther("server", &serverOther)
