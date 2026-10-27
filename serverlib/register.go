@@ -3,8 +3,11 @@ package serverlib
 import (
 	"fmt"
 
+	ginmw "github.com/LandcLi/landc-go/api/middleware/gin"
 	frameconfig "github.com/LandcLi/landc-go/frame/pkg/config"
 	"github.com/LandcLi/landc-go/frame/pkg/web"
+	"github.com/LandcLi/landc-go/tools/security"
+	"github.com/gin-gonic/gin"
 
 	"github.com/LandcLi/LandcUserManager/api/common"
 	"github.com/LandcLi/LandcUserManager/api/user"
@@ -80,6 +83,19 @@ func RegisterToRouter(s *web.Server, opts ...Option) error {
 		return err
 	}
 
+	// gin 运行模式：ServerConfig.GinMode 此前只声明字段、从未赋值，等于配了不生效。
+	// （debug 模式会打印全部路由并在日志里输出调试信息，生产应切 release）
+	if cfg := config.TryGetConfig(); cfg != nil {
+		if cfg.Server.GinMode != "" {
+			gin.SetMode(cfg.Server.GinMode)
+		}
+		// 安全响应头：配置里一直有开关，但代码从未实现，响应里一个头都没有。
+		// 框架提供了 SecurityHeaders 中间件，这里按配置挂上。
+		if cfg.Server.SecurityHeaders.Enabled {
+			s.Engine().Use(ginmw.SecurityHeaders(toHeadersConfig(cfg.Server.SecurityHeaders)))
+		}
+	}
+
 	// 全局鉴权中间件，必须在 RegisterHandler 之前挂载（与独立部署一致）
 	if o.authEnabled {
 		s.Engine().Use(middleware.Auth())
@@ -89,5 +105,38 @@ func RegisterToRouter(s *web.Server, opts ...Option) error {
 	if err := s.RegisterHandler(common.GetCommonController(), o.webOpts...); err != nil {
 		return err
 	}
-	return s.RegisterHandler(user.GetUserController(), o.webOpts...)
+	if err := s.RegisterHandler(user.GetUserController(), o.webOpts...); err != nil {
+		return err
+	}
+
+	// 登录历史清理：DAO 早就有 DeleteOldRecords，但从未被调度过，
+	// login_histories 只写不删会无限增长。
+	if cfg := config.TryGetConfig(); cfg != nil {
+		startLoginHistoryCleanup(cfg.LoginHistory.RetentionDays)
+	}
+
+	return nil
+}
+
+// toHeadersConfig 把本系统配置转成框架的安全头配置。
+//
+// 未显式设置的项取安全默认：FrameDeny / nosniff 开，HSTS 关
+// （内网常见 HTTP 部署，发 HSTS 会把浏览器强制升级到 HTTPS，反而打不开）。
+func toHeadersConfig(c config.SecurityHeadersConfig) security.HeadersConfig {
+	out := security.HeadersConfig{
+		HSTSMaxAge:         c.HSTSMaxAge,
+		FrameDeny:          true,
+		ContentTypeNoSniff: true,
+		ReferrerPolicy:     "strict-origin-when-cross-origin",
+	}
+	if c.FrameDeny != nil {
+		out.FrameDeny = *c.FrameDeny
+	}
+	if c.ContentTypeNoSniff != nil {
+		out.ContentTypeNoSniff = *c.ContentTypeNoSniff
+	}
+	if c.ReferrerPolicy != "" {
+		out.ReferrerPolicy = c.ReferrerPolicy
+	}
+	return out
 }

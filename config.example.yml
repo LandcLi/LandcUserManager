@@ -28,9 +28,29 @@ server:
     readiness_path: "/ready"
     database_check: true
     redis_check: false
-  security_headers:
-    enabled: true
   request_timeout: 30
+
+# 本系统在框架标准字段之外的扩展配置
+#
+# 注意：这些项必须放在 other 段下。框架只把 server / database / redis / log / jwt
+# 解析进内置结构，server 段里的其他键会被忽略 —— 之前 security_headers 就写在
+# server 段里，配了 enabled: true 却一个响应头都没发出去。
+other:
+  server:
+    # gin 运行模式：debug / release / test
+    # 生产用 release：debug 会打印全部路由并输出大量调试信息。
+    gin_mode: "debug"
+
+    # 安全响应头
+    #
+    # HSTS 默认 0（不发送）：内网常以 HTTP 部署，发了 Strict-Transport-Security
+    # 会让浏览器把该域名强制升级到 HTTPS，反而打不开。确认走 HTTPS 后再设值。
+    security_headers:
+      enabled: true
+      hsts_max_age: 0
+      frame_deny: true
+      content_type_nosniff: true
+      referrer_policy: "strict-origin-when-cross-origin"
 
 # 数据库配置：默认 SQLite（纯 Go 驱动，无需 CGO / gcc / 外部服务）
 database:

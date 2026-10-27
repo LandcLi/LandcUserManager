@@ -51,6 +51,23 @@ type ServerConfig struct {
 	GinMode          string
 	EnableCORS       bool
 	UserDefaultRoute bool
+	SecurityHeaders  SecurityHeadersConfig
+}
+
+// SecurityHeadersConfig 安全响应头开关（取自 other.server.security_headers）。
+//
+// 历史状态：config.example.yml 里一直写着 server.security_headers.enabled: true，
+// 但代码里既没有对应字段也没有挂中间件 —— 配置在说谎，响应里一个安全头都没有。
+// 框架本身提供了 api/middleware/gin.SecurityHeaders，只是从没被调用。
+//
+// HSTS 默认关闭（0）：内网常以 HTTP 部署，发 Strict-Transport-Security 会让浏览器
+// 把该域名强制升级到 HTTPS，反而把服务访问搞坏。确认走 HTTPS 后再显式开启。
+type SecurityHeadersConfig struct {
+	Enabled            bool   `yaml:"enabled" json:"enabled"`
+	HSTSMaxAge         int    `yaml:"hsts_max_age" json:"hsts_max_age"`
+	FrameDeny          *bool  `yaml:"frame_deny" json:"frame_deny"`
+	ContentTypeNoSniff *bool  `yaml:"content_type_nosniff" json:"content_type_nosniff"`
+	ReferrerPolicy     string `yaml:"referrer_policy" json:"referrer_policy"`
 }
 type DatabaseConfig struct {
 	DSN             string
@@ -132,6 +149,14 @@ func defaultLoginSecurity() LoginSecurityConfig {
 	}
 }
 
+// defaultLoginHistoryRetentionDays 登录历史默认保留天数。
+// 与 config.example.yml 保持一致；<=0 表示不做清理（不推荐）。
+const defaultLoginHistoryRetentionDays = 90
+
+func defaultLoginHistory() LoginHistoryConfig {
+	return LoginHistoryConfig{RetentionDays: defaultLoginHistoryRetentionDays}
+}
+
 // GetConfig 从框架全局配置中提取 LUM 类型化配置。
 // 配置由框架全权加载和管理，此函数仅做类型转换。
 // 框架配置未初始化时 panic —— 适合 main 启动路径上的「必须有配置」调用点。
@@ -173,7 +198,18 @@ func extractLUMConfig(fc *frameconfig.Config) *Config {
 		},
 		// 先填默认值，再由 UnmarshalOther 覆盖配置里显式给出的键。
 		LoginSecurity: defaultLoginSecurity(),
+		LoginHistory:  defaultLoginHistory(),
 	}
+
+	// other.server：本系统在框架 server 段之外的扩展项。
+	// gin_mode 此前只声明了字段、从未赋值，等于配了不生效。
+	var serverOther struct {
+		GinMode         string               `json:"gin_mode"`
+		SecurityHeaders SecurityHeadersConfig `json:"security_headers"`
+	}
+	_ = fc.UnmarshalOther("server", &serverOther)
+	cfg.Server.GinMode = serverOther.GinMode
+	cfg.Server.SecurityHeaders = serverOther.SecurityHeaders
 
 	// 自定义配置通过 UnmarshalOther 类型化（基于 JSON 中转）
 	_ = fc.UnmarshalOther("jwt", &cfg.JWT)
